@@ -9,3 +9,4 @@ title: Small Diary
 - **Ollama**: Setup Ollama server, ran small 7B models, were slow, but hopefully would catch up.
 - **AI Researcher**: Tested out [Automated-AI-Web-Researcher-Ollama](https://github.com/TheBlewish/Automated-AI-Web-Researcher-Ollama) last year. Thought of finding the potential drug candidates out there for a project using it. Deep Research agents were not as powerful back then.
 - **[Fara-7B](./fara-7b)**: Ran Microsoft Fara-7B.
+- 28/01/2026 >> Working on testing Qwen Custom Voice clone and TTS models. They are slow on my system (RTF >30). I realized it is the data transfer speed between my CPU and the GPU to be the cause. Similar issue faced [here](https://github.com/QwenLM/Qwen3-TTS/issues/89)
