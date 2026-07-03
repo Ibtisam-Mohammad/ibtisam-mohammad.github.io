@@ -7,7 +7,7 @@ import { registerWaypoints } from '../turtle.js';
 
 export function initHeroScene() {
   const el = document.getElementById('hero');
-  const svg = el.querySelector('.hero-scene');
+  const svg = el && el.querySelector('.hero-scene');
   if (!svg) return;
 
   const axes = [...svg.querySelectorAll('[data-part="axis"]')];
@@ -34,6 +34,9 @@ export function initHeroScene() {
       { x: u(0.014), y: at(0.3), vy: lineVY, pen: 'down' },
       { x: u(0.3), y: at(0.48), vy: lineVY, pen: 'down' },
       { x: u(0.58), y: at(0.68), vy: lineVY, pen: 'up' },
+      // glide back to the left lane before the section ends, so the visible trail
+      // exits cleanly instead of kinking across the next section's margin drawings
+      { x: r.left - 30, y: at(0.88), pen: 'up' },
     ];
   });
 

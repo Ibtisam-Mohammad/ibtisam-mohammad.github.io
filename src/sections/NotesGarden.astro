@@ -1,6 +1,8 @@
 ---
-// §10.8 — Notes / research garden. Phase 1: the list. The turtle-drawn notes graph
-// (7–9 nodes, hover/keyboard-linked to these rows) arrives in Phase 3.
+// §10.8 — Notes / research garden. The turtle draws a small notes graph (8 nodes,
+// curved edges) as a visual index; hovering, focusing, or toggling a node highlights
+// the matching list rows (keyboard-operable: the nodes are buttons). Paint stays
+// quiet: mixed-hue dots, one soft wash.
 import SectionHeader from '../components/SectionHeader.astro';
 
 // PLACEHOLDER note titles — replace with the owner's real notes
@@ -12,8 +14,31 @@ const notes = [
   { title: 'Segment anything, measure something', date: 'Jun 2025', datetime: '2025-06', tags: [{ t: 'vision', a: 'leaf' }] },
   { title: 'Drift is a distribution, not an alarm', date: 'Apr 2025', datetime: '2025-04', tags: [{ t: 'mlops', a: 'ember' }] },
 ];
+
+// the graph: one node per tag, hand-laid layout, curved edges between related ideas
+const nodes = [
+  { tag: 'theory', x: 150, y: 62, a: 'cobalt' },
+  { tag: 'transformers', x: 66, y: 128, a: 'teal' },
+  { tag: 'linear algebra', x: 236, y: 116, a: 'cobalt' },
+  { tag: 'probability', x: 96, y: 208, a: 'cobalt' },
+  { tag: 'optimization', x: 212, y: 200, a: 'cobalt' },
+  { tag: 'evals', x: 52, y: 284, a: 'violet' },
+  { tag: 'vision', x: 162, y: 290, a: 'leaf' },
+  { tag: 'mlops', x: 254, y: 280, a: 'ember' },
+];
+const edgePairs: [number, number][] = [
+  [0, 1], [0, 2], [0, 3], [0, 4], [3, 5], [1, 5], [4, 7], [6, 7], [2, 6],
+];
+const edges = edgePairs.map(([i, j]) => {
+  const a = nodes[i], b = nodes[j];
+  const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+  const nx = -(b.y - a.y), ny = b.x - a.x;
+  const m = Math.hypot(nx, ny) || 1;
+  return `M ${a.x} ${a.y} Q ${(mx + (nx / m) * 16).toFixed(1)} ${(my + (ny / m) * 16).toFixed(1)}, ${b.x} ${b.y}`;
+});
 ---
 <section id="notes" class="section" style="--accent: var(--violet)" aria-labelledby="notes-title">
+  <div class="wash" data-opacity="0.12" style="--o: 0.12; --tex: url(/textures/wash-bloom-b.webp); --tint: var(--violet); right: -70px; top: 18%; width: calc(var(--gutter) + 60px); aspect-ratio: 1;"></div>
   <div class="container">
     <SectionHeader
       num="08"
@@ -22,44 +47,90 @@ const notes = [
       glyphId="notes"
       lede="Working notes on the math behind the models — short, specific, and kept honest."
     />
-    <ol class="notes-list" role="list">
-      {notes.map((n) => (
-        <li class="note">
-          <time class="mono muted" datetime={n.datetime}>{n.date}</time>
-          <span class="note-title">{n.title}</span>
-          <ul class="chip-row note-tags" role="list">
-            {n.tags.map((tag) => (
-              <li class="chip" style={`--accent: var(--${tag.a})`}>{tag.t}</li>
-            ))}
-          </ul>
-        </li>
-      ))}
-    </ol>
+    <div class="notes-layout">
+      <ol class="notes-list" role="list">
+        {notes.map((n) => (
+          <li class="note" data-tags={n.tags.map((t) => t.t).join('|')}>
+            <time class="mono muted" datetime={n.datetime}>{n.date}</time>
+            <span class="note-title">{n.title}</span>
+            <ul class="chip-row note-tags" role="list">
+              {n.tags.map((tag) => (
+                <li class="chip" style={`--accent: var(--${tag.a})`}>{tag.t}</li>
+              ))}
+            </ul>
+          </li>
+        ))}
+      </ol>
+
+      <figure class="notes-graph-wrap">
+        <svg class="notes-graph" viewBox="0 0 300 340" role="group" aria-label="Notes topic graph — activate a topic to highlight matching notes">
+          {edges.map((d) => <path data-draw class="ng-edge" d={d} />)}
+          {nodes.map((n) => (
+            <g
+              class="ng-node"
+              data-tag={n.tag}
+              tabindex="0"
+              role="button"
+              aria-pressed="false"
+              aria-label={`Highlight notes tagged ${n.tag}`}
+            >
+              <circle data-pop class="ng-dot" cx={n.x} cy={n.y} r="13" style={`--na: var(--${n.a})`} />
+              <text x={n.x} y={n.y + 30}>{n.tag}</text>
+            </g>
+          ))}
+        </svg>
+        <figcaption class="mono muted">the graph is an index — tap a topic.</figcaption>
+      </figure>
+    </div>
   </div>
 </section>
 
 <style>
-  .notes-list {
-    list-style: none;
-    padding: 0;
-    margin-top: var(--s-5);
+  .notes-layout { display: grid; gap: var(--s-6); }
+  @media (min-width: 1024px) {
+    .notes-layout { grid-template-columns: 1fr 300px; align-items: start; }
   }
+  .notes-list { list-style: none; padding: 0; margin-top: var(--s-2); }
   .note {
     display: grid;
     grid-template-columns: 96px 1fr auto;
     gap: var(--s-2) var(--s-5);
     align-items: baseline;
-    padding-block: var(--s-4);
+    padding: var(--s-4) var(--s-3);
+    border-radius: var(--radius);
+    transition: background-color var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease);
   }
   .note + .note { border-top: 1px solid var(--line-soft); }
-  .note-title {
-    font-family: var(--font-body);
-    font-weight: 600;
-    font-size: var(--step-0);
-  }
+  .note-title { font-weight: 600; font-size: var(--step-0); }
+  .note.dim { opacity: 0.38; }
+  .note.hl { background: color-mix(in srgb, var(--accent) 9%, transparent); }
   @media (max-width: 719px) {
     .note { grid-template-columns: 1fr; }
     .note time { order: 2; }
     .note-tags { order: 3; }
   }
+
+  .notes-graph-wrap { margin-top: var(--s-2); }
+  .notes-graph { width: 100%; max-width: 300px; height: auto; overflow: visible; }
+  .ng-edge { stroke: var(--ink-soft); stroke-width: 1.3; fill: none; opacity: 0.55; }
+  .ng-node { cursor: pointer; pointer-events: bounding-box; }
+  .ng-dot {
+    fill: color-mix(in srgb, var(--na, var(--violet)) 30%, var(--paper));
+    stroke: var(--ink);
+    stroke-width: 1.6;
+    transition: stroke-width var(--t-fast) var(--ease);
+  }
+  .ng-node:hover .ng-dot, .ng-node:focus-visible .ng-dot, .ng-node[aria-pressed="true"] .ng-dot {
+    stroke-width: 3.2;
+    fill: color-mix(in srgb, var(--na, var(--violet)) 55%, var(--paper));
+  }
+  .ng-node:focus-visible { outline: none; }
+  .ng-node text {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+    fill: var(--ink-soft);
+    text-anchor: middle;
+  }
+  .notes-graph-wrap figcaption { margin-top: var(--s-3); }
 </style>

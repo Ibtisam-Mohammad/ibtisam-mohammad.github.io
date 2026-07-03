@@ -152,6 +152,23 @@ a:hover { text-decoration-thickness: 2.5px; }
   width: min(var(--content-max), 100% - 2 * var(--gutter));
   margin-inline: auto;
 }
+.section { position: relative; }
+.section .container { position: relative; z-index: 1; }
+/* margin drawings: the turtle's work in the outer gutters, desktop only */
+.margin-draw {
+  position: absolute;
+  left: calc(-0.05 * var(--gutter));
+  width: min(calc(var(--gutter) * 0.9), 150px);
+  height: auto;
+  display: none;
+  pointer-events: none;
+  overflow: visible;
+}
+.margin-draw.margin-right { left: auto; right: calc(-0.05 * var(--gutter)); }
+@media (min-width: 1200px) {
+  .margin-draw { display: block; left: calc(-0.95 * var(--gutter)); }
+  .margin-draw.margin-right { left: auto; right: calc(-0.95 * var(--gutter)); }
+}
 /* mobile: reserve a 44px right lane — the turtle and vine must never overlap text (§3) */
 @media (max-width: 719px) {
   .container {
@@ -389,6 +406,30 @@ html.anim .sh-svg {
   stroke-width: 4.5; /* glyph units (em/100): ~1.8px at rendered size */
   fill: var(--ink);
   fill-opacity: 0; /* engine fills after the outlines complete */
+}
+
+/* pops (dots, chips, tapes) scale about their own center when the engine drives them */
+[data-pop] {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* runtime-built Problem→Approach→Result arrows on the lead case study (work scene) */
+.cs-rows { position: relative; }
+.cs-arrows {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+.cs-arrows path {
+  stroke: var(--ink-soft);
+  stroke-width: 1.6;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 /* ---------- reduced motion: kill the micro-transitions too ---------- */

@@ -3,14 +3,20 @@
 // DOM. With JS + motion (html.anim), the visible treatment is the letter outlines
 // drawing in, layered over visually-hidden real text. Reduced-motion and no-JS users
 // get the plainly set heading — the SVG never shows.
-import headings from '../assets/generated/headings.json';
+// Glyph outlines are stored deduplicated (one path per unique letter, referenced by
+// index + x offset) — see scripts/gen_heading_paths.py.
+import data from '../assets/generated/headings.json';
 
 interface Props {
   glyphId: string;
   headingId: string;
 }
 const { glyphId, headingId } = Astro.props;
-const h = (headings as Record<string, { text: string; width: number; height: number; paths: string[] }>)[glyphId];
+const { paths, headings } = data as {
+  paths: string[];
+  headings: Record<string, { text: string; width: number; height: number; glyphs: [number, number][] }>;
+};
+const h = headings[glyphId];
 if (!h) throw new Error(`StrokeHeading: no glyphs generated for "${glyphId}" — run scripts/gen_heading_paths.py`);
 ---
 <h2 id={headingId} class="stroke-heading">
@@ -21,6 +27,6 @@ if (!h) throw new Error(`StrokeHeading: no glyphs generated for "${glyphId}" —
     style={`aspect-ratio: ${h.width} / ${h.height};`}
     aria-hidden="true"
   >
-    {h.paths.map((d: string) => <path data-draw d={d} />)}
+    {h.glyphs.map(([ref, x]) => <path data-draw d={paths[ref]} transform={`translate(${x} 0)`} />)}
   </svg>
 </h2>

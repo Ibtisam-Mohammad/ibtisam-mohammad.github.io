@@ -93,6 +93,36 @@ function stemD(len, bend) {
   return `M0 0 Q ${(len * 0.45).toFixed(1)} ${(bend * 0.7).toFixed(1)}, ${(len * 0.8).toFixed(1)} ${(bend * 0.4).toFixed(1)} T ${len.toFixed(1)} ${(bend * 0.55).toFixed(1)}`;
 }
 
+// stem geometry, computed mathematically — getTotalLength()/getPointAtLength() force
+// layout, and at thousands of stems they were the boot-time long-task (§13 discipline)
+function stemGeom(len, bend) {
+  const A = [len * 0.8, bend * 0.4];
+  const C1 = [len * 0.45, bend * 0.7];
+  const C2 = [2 * A[0] - C1[0], 2 * A[1] - C1[1]]; // T reflects the control point
+  const B = [len, bend * 0.55];
+  const q = (p0, c, p1, t) => {
+    const u = 1 - t;
+    return [u * u * p0[0] + 2 * u * t * c[0] + t * t * p1[0], u * u * p0[1] + 2 * u * t * c[1] + t * t * p1[1]];
+  };
+  const dq = (p0, c, p1, t) => [
+    2 * (1 - t) * (c[0] - p0[0]) + 2 * t * (p1[0] - c[0]),
+    2 * (1 - t) * (c[1] - p0[1]) + 2 * t * (p1[1] - c[1]),
+  ];
+  const point = (t) => (t < 0.5 ? q([0, 0], C1, A, t * 2) : q(A, C2, B, (t - 0.5) * 2));
+  const angle = (t) => {
+    const d = t < 0.5 ? dq([0, 0], C1, A, t * 2) : dq(A, C2, B, (t - 0.5) * 2);
+    return (Math.atan2(d[1], d[0]) * 180) / Math.PI;
+  };
+  let arc = 0;
+  let prev = [0, 0];
+  for (let i = 1; i <= 16; i++) {
+    const p = point(i / 16);
+    arc += Math.hypot(p[0] - prev[0], p[1] - prev[1]);
+    prev = p;
+  }
+  return { arc, point, angle };
+}
+
 /**
  * Recursively build one branch into `g`. Returns animatable parts, each with a
  * reveal window [a, b] in trunk-local progress: the stem draws first, leaves pop
@@ -102,28 +132,23 @@ function buildBranch(g, rand, o) {
   const parts = [];
   const accent = o.palette[o.colorIdx % o.palette.length];
   const bend = (rand() - 0.5) * o.len * 0.9;
+  const geom = stemGeom(o.len, bend);
   const stem = el('path', { class: 'vb-stem', d: stemD(o.len, bend), stroke: accent }, g);
   state.count++;
-  const sl = stem.getTotalLength();
+  const sl = geom.arc;
   stem.style.strokeDasharray = `${sl} ${sl * 3}`;
   stem.style.strokeDashoffset = `${sl}`;
   const stemEnd = o.t0 + (o.t1 - o.t0) * 0.45;
   parts.push({ el: stem, stem: true, a: o.t0, b: stemEnd, len: sl });
 
-  const angleAt = (f) => {
-    const p1 = stem.getPointAtLength(Math.max(f * sl - 1, 0));
-    const p2 = stem.getPointAtLength(Math.min(f * sl + 1, sl));
-    return (Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180) / Math.PI;
-  };
-
   // leaves along the stem, denser and larger down the page
   const nLeaves = Math.min(1 + Math.round(rand() * (0.5 + o.pageDepth * 3.0)), 4);
   for (let k = 0; k < nLeaves && state.count < MAX_ELEMENTS; k++) {
     const f = 0.45 + (k / Math.max(nLeaves, 1)) * 0.5;
-    const pt = stem.getPointAtLength(f * sl);
-    const la = angleAt(f) + (k % 2 ? 1 : -1) * (36 + rand() * 32);
+    const [px, py] = geom.point(f);
+    const la = geom.angle(f) + (k % 2 ? 1 : -1) * (36 + rand() * 32);
     const ls = (0.65 + rand() * 0.5 + o.pageDepth * 0.5) * o.scale * Math.pow(0.82, o.level);
-    const lg = el('g', { transform: `translate(${pt.x.toFixed(1)} ${pt.y.toFixed(1)}) rotate(${la.toFixed(0)})` }, g);
+    const lg = el('g', { transform: `translate(${px.toFixed(1)} ${py.toFixed(1)}) rotate(${la.toFixed(0)})` }, g);
     const leaf = el('path', { class: 'vb-part', d: LEAF_D, fill: accent, 'fill-opacity': '0.32', stroke: accent, 'stroke-width': '0.9' }, lg);
     state.count++;
     leaf.dataset.s = ls.toFixed(2);
@@ -133,7 +158,7 @@ function buildBranch(g, rand, o) {
 
   // a berry at the tip, more often deeper down
   if (rand() < 0.2 + o.pageDepth * 0.55 && state.count < MAX_ELEMENTS) {
-    const tip = stem.getPointAtLength(sl);
+    const tip = { x: geom.point(1)[0], y: geom.point(1)[1] };
     const bg = el('g', { transform: `translate(${tip.x.toFixed(1)} ${tip.y.toFixed(1)})` }, g);
     const berry = el('circle', {
       class: 'vb-part',
@@ -153,9 +178,9 @@ function buildBranch(g, rand, o) {
     const nSub = Math.min(Math.floor(rand() * 0.8 + d2 * (o.level === 0 ? 4.4 : 3.0)), 4);
     for (let k = 0; k < nSub; k++) {
       const f = 0.35 + rand() * 0.55;
-      const pt = stem.getPointAtLength(f * sl);
-      const da = angleAt(f) + (k % 2 ? 1 : -1) * (30 + rand() * 36);
-      const sg = el('g', { transform: `translate(${pt.x.toFixed(1)} ${pt.y.toFixed(1)}) rotate(${(da - angleAt(f)).toFixed(0)})` }, g);
+      const [px, py] = geom.point(f);
+      const da = (k % 2 ? 1 : -1) * (30 + rand() * 36);
+      const sg = el('g', { transform: `translate(${px.toFixed(1)} ${py.toFixed(1)}) rotate(${da.toFixed(0)})` }, g);
       const subStart = o.t0 + (o.t1 - o.t0) * (0.4 + f * 0.25);
       parts.push(...buildBranch(sg, rand, {
         ...o,
@@ -170,34 +195,53 @@ function buildBranch(g, rand, o) {
   return parts;
 }
 
-// (re)build the whole vine along the current guide path
-export function measureVine(guide, total) {
-  state.total = total;
+// (re)build the whole vine along the current guide path. `info` comes from
+// turtle.guideInfo(): math-metric samples of the path — no browser path API here
+// (getPointAtLength at this scale was the boot long-task).
+export function measureVine(info) {
+  const { samples, browserTotal } = info;
+  const { xs, ys, cum, total } = samples;
+  if (!xs.length) return;
+  state.metricScale = browserTotal > 0 ? total / browserTotal : 1;
 
-  // the visible trail begins where the hero scene ends: the hero opens on blank
-  // paper (§7 level 1), and the turtle starts leaving its trail after the origin
-  // dot. Find the arc where the path exits the hero, then rebuild the trail as a
-  // sampled subpath from there.
+  // point + tangent at a math-metric arc position, via binary search + lerp
+  const pointAt = (arc) => {
+    let lo = 0, hi = cum.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (cum[mid] < arc) lo = mid + 1; else hi = mid;
+    }
+    const i = Math.max(lo, 1);
+    const t = (arc - cum[i - 1]) / (cum[i] - cum[i - 1] + 1e-9);
+    return {
+      x: xs[i - 1] + (xs[i] - xs[i - 1]) * t,
+      y: ys[i - 1] + (ys[i] - ys[i - 1]) * t,
+      tx: xs[i] - xs[i - 1],
+      ty: ys[i] - ys[i - 1],
+    };
+  };
+
+  // the visible trail begins where the hero ends: blank paper first (§7 level 1)
   const hero = document.getElementById('hero');
   let startArc = 0;
   if (hero) {
     const hr = hero.getBoundingClientRect();
     const heroExitY = hr.top + window.scrollY + hr.height - 60;
-    let lo = 0, hi = total;
-    for (let k = 0; k < 24; k++) {
-      const mid = (lo + hi) / 2;
-      if (guide.getPointAtLength(mid).y < heroExitY) lo = mid; else hi = mid;
+    for (let i = 0; i < ys.length; i++) {
+      if (ys[i] > heroExitY) { startArc = cum[i]; break; }
     }
-    startArc = hi;
   }
   state.startArc = startArc;
   const pts = [];
-  for (let a = startArc; a <= total; a += 22) {
-    const p = guide.getPointAtLength(a);
-    pts.push(`${p.x.toFixed(1)} ${p.y.toFixed(1)}`);
+  let nextArc = startArc;
+  for (let i = 0; i < cum.length; i++) {
+    if (cum[i] >= nextArc) {
+      pts.push(`${xs[i].toFixed(1)} ${ys[i].toFixed(1)}`);
+      nextArc += 22;
+    }
   }
   state.trail.setAttribute('d', pts.length > 1 ? `M ${pts[0]} L ${pts.slice(1).join(' L ')}` : 'M 0 0');
-  const L = state.trail.getTotalLength();
+  const L = Math.max(total - startArc, 1);
   state.trail.style.strokeDasharray = `${L} ${L * 3}`;
   state.trail.style.strokeDashoffset = `${L}`;
   state.trailLen = L;
@@ -218,21 +262,18 @@ export function measureVine(guide, total) {
     const d2 = depth * depth; // quadratic density ramp
     let spacing = (SPACING_START + (SPACING_END - SPACING_START) * d2) * (mobile ? 1.7 : 1) * (0.8 + rand() * 0.5);
     // free margins (outside the content column) grow extra-dense
-    const probe = guide.getPointAtLength(Math.min(pos + spacing, total - 61));
+    const probe = pointAt(Math.min(pos + spacing, total - 61));
     if (probe.x < contentRect.left - 40 || probe.x > contentRect.right + 40) spacing *= 0.72;
     pos += spacing;
     if (pos >= total - 60) break;
 
-    const p = guide.getPointAtLength(pos);
+    const p = pointAt(pos);
     const dist = distToText(ranges, contentRect, p.x, p.y);
     if (dist === 0) continue;
     // clusters shrink as they approach text: reach must never cross into copy
     const prox = Math.min(dist / 170, 1);
-    const ahead = guide.getPointAtLength(Math.min(pos + 2, total));
-    const behind = guide.getPointAtLength(Math.max(pos - 2, 0));
-    const tx = ahead.x - behind.x, ty = ahead.y - behind.y;
-    const tl = Math.hypot(tx, ty) || 1;
-    let nx = -ty / tl, ny = tx / tl;
+    const tl = Math.hypot(p.tx, p.ty) || 1;
+    let nx = -p.ty / tl, ny = p.tx / tl;
     const away = p.x < docW / 2 ? -1 : 1;
     if (nx * away < 0) { nx = -nx; ny = -ny; }
 
@@ -267,12 +308,14 @@ export function measureVine(guide, total) {
 
 export function updateVine(len) {
   if (!state.trail) return;
+  // the turtle reports browser-metric arc; the vine lives in math-metric
+  const mlen = len * (state.metricScale || 1);
   // the trail is the guide path past the hero: reveal to the turtle's arc position
-  const eff = clamp01((len - state.startArc) / Math.max(state.trailLen, 1)) * state.trailLen;
+  const eff = clamp01((mlen - state.startArc) / Math.max(state.trailLen, 1)) * state.trailLen;
   state.trail.style.strokeDashoffset = String(state.trailLen - eff);
 
   for (const b of state.branches) {
-    const t = seg(len, b.pos - 10, b.pos - 10 + b.grow);
+    const t = seg(mlen, b.pos - 10, b.pos - 10 + b.grow);
     if (t === b.t) continue;
     b.t = t;
     for (const part of b.parts) {

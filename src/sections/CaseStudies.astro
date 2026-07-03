@@ -1,7 +1,13 @@
 ---
 // §10.7 — Selected case studies: the 30-second recruiter skim zone.
-// Strict template: Problem → Approach → Result → stack → link. Taped-frame reveals arrive in Phase 3.
+// Strict template: Problem → Approach → Result → stack → link, now with taped-frame
+// screenshot reveals (§8 variant 3: the turtle draws a frame plus two tape corners;
+// the screenshot fades in immediately — calm and instant) and connective arrows
+// Problem → Approach → Result on the lead card only (built at runtime in work.js).
 import SectionHeader from '../components/SectionHeader.astro';
+import { mulberry32, wobbleRect } from '../lib/draw.mjs';
+
+const rand = mulberry32(20260715);
 
 // PLACEHOLDER case studies — realistic but fake; figures are illustrative, not claims
 const cases = [
@@ -12,6 +18,8 @@ const cases = [
     result: 'Critical-defect recall up 31 points at the same false-positive rate.',
     resultChips: ['+31 pts recall', 'same FP rate'],
     stack: ['PyTorch', 'TensorRT', 'OpenCV', 'Grafana'],
+    shot: '/img/shot-detection.webp',
+    shotAlt: 'Detection dashboard mockup with bounding boxes and metric panels — placeholder screenshot',
   },
   {
     name: 'Grounded assistant for support teams',
@@ -20,6 +28,8 @@ const cases = [
     result: 'Median lookup time down from eight minutes to 40 seconds, every answer citing its source.',
     resultChips: ['8 min → 40 s', 'cited answers'],
     stack: ['Python', 'pgvector', 'FastAPI', 'LLM API'],
+    shot: '/img/shot-assistant.webp',
+    shotAlt: 'Assistant chat interface mockup with cited answers — placeholder screenshot',
   },
   {
     name: 'Forecast platform, re-platformed',
@@ -28,8 +38,15 @@ const cases = [
     result: 'Retrain cadence moved from quarterly to weekly; zero manual deploys in the last two quarters.',
     resultChips: ['quarterly → weekly', '0 manual deploys'],
     stack: ['Docker', 'MLflow', 'Prefect', 'Postgres'],
+    shot: '/img/shot-pipeline.webp',
+    shotAlt: 'Pipeline monitoring dashboard mockup with stage graph and drift chart — placeholder screenshot',
   },
 ];
+
+// each card gets its own wobbled frame + two tape corners
+const frames = cases.map(() => wobbleRect(6, 6, 508, 318, rand, { step: 44, amp: 4 }));
+const TAPE_TL = 'M -20 34 L 34 -20 L 58 4 L 4 58 Z';
+const TAPE_BR = 'M 462 344 L 516 290 L 540 314 L 486 368 Z';
 ---
 <section id="work" class="section" style="--accent: var(--ink-soft)" aria-labelledby="work-title">
   <div class="container">
@@ -41,7 +58,7 @@ const cases = [
       lede="Problem, approach, result — with the metric up front."
     />
     <div class="case-list">
-      {cases.map((c) => (
+      {cases.map((c, i) => (
         <article class="card cs-card">
           <header class="cs-head">
             <h3>{c.name}</h3>
@@ -74,6 +91,16 @@ const cases = [
               </dd>
             </div>
           </dl>
+          <figure class="cs-shot">
+            <div class="cs-shot-frame">
+              <img src={c.shot} alt={c.shotAlt} width="1200" height="750" loading="lazy" decoding="async" />
+              <svg class="cs-frame-svg" viewBox="0 0 520 330" preserveAspectRatio="none" aria-hidden="true">
+                <path data-draw class="cs-frame-path" d={frames[i]} />
+                <path data-pop class="cs-tape" d={TAPE_TL} />
+                <path data-pop class="cs-tape" d={TAPE_BR} />
+              </svg>
+            </div>
+          </figure>
           <p class="mono muted cs-link">full write-up — [CASE_STUDY_URL]</p>
         </article>
       ))}
@@ -89,6 +116,15 @@ const cases = [
   }
   .case-list { display: grid; gap: var(--s-5); }
   .cs-card { padding: var(--s-6); }
+  @media (min-width: 1024px) {
+    .cs-card {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      column-gap: var(--s-6);
+      align-items: start;
+    }
+    .cs-head, .cs-link { grid-column: 1 / -1; }
+  }
   .cs-head {
     display: flex;
     align-items: baseline;
@@ -106,9 +142,37 @@ const cases = [
   .cs-row dt { letter-spacing: 0.08em; }
   .cs-row dd { margin: 0; }
   .cs-result { font-weight: 600; margin-bottom: var(--s-2); }
-  .cs-result::first-line { font-weight: 600; }
   .cs-link { margin-top: var(--s-5); }
   @media (max-width: 719px) {
     .cs-row { grid-template-columns: 1fr; }
+  }
+
+  .cs-shot { margin-top: var(--s-5); }
+  @media (min-width: 1024px) {
+    .cs-shot { margin-top: 0; }
+  }
+  .cs-shot-frame { position: relative; }
+  .cs-shot-frame img {
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+    display: block;
+  }
+  .cs-frame-svg {
+    position: absolute;
+    inset: -8px;
+    width: calc(100% + 16px);
+    height: calc(100% + 16px);
+    overflow: visible;
+    pointer-events: none;
+  }
+  .cs-frame-path { stroke: var(--ink); stroke-width: 2; fill: none; stroke-linejoin: round; }
+  .cs-tape {
+    fill: var(--marker);
+    fill-opacity: 0.5;
+    stroke: color-mix(in srgb, var(--ink) 30%, transparent);
+    stroke-width: 1;
+    transform-box: fill-box;
+    transform-origin: center;
   }
 </style>

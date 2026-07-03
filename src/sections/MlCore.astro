@@ -1,7 +1,12 @@
 ---
-// §10.3 — AI / ML expertise: short narrative + grouped skill chips.
-// Turtle drawings (feed-forward net, decision boundary, embedding hulls) arrive in Phase 3.
+// §10.3 — AI / ML expertise: short narrative + grouped skill chips, plus the turtle's
+// three drawings: a small feed-forward network (3-4-2), a decision boundary curving
+// between two point clouds, and an embedding scatter with two hulls. Geometry is
+// generated at build time; the engine draws it on scroll.
 import SectionHeader from '../components/SectionHeader.astro';
+import { mulberry32, wobbleEllipse, scatter } from '../lib/draw.mjs';
+
+const rand = mulberry32(20260713);
 
 // PLACEHOLDER: adjust skill groups to the owner's real toolkit
 const groups = [
@@ -18,6 +23,33 @@ const groups = [
     skills: ['PyTorch', 'JAX', 'scikit-learn', 'Hugging Face', 'Optuna', 'Weights & Biases'],
   },
 ];
+
+// panel 1: feed-forward network, 3-4-2
+const layers = [
+  [86, 140, 194].map((y) => [80, y]),
+  [59, 113, 167, 221].map((y) => [180, y]),
+  [113, 167].map((y) => [280, y]),
+] as [number, number][][];
+const edges: string[] = [];
+for (let l = 0; l < layers.length - 1; l++) {
+  for (const [x1, y1] of layers[l]) {
+    for (const [x2, y2] of layers[l + 1]) {
+      edges.push(`M ${x1 + 13} ${y1} L ${x2 - 13} ${y2}`);
+    }
+  }
+}
+const nodes = layers.flat();
+
+// panel 2: two clouds and the boundary between them
+const cloudA = scatter(468, 105, 30, 26, 12, rand);
+const cloudB = scatter(566, 196, 30, 24, 12, rand);
+const boundaryD = 'M 392 236 C 452 214, 462 118, 520 142 C 566 161, 592 84, 648 68';
+
+// panel 3: embedding scatter with two hulls
+const embA = scatter(772, 112, 34, 20, 10, rand, -0.3);
+const embB = scatter(888, 198, 30, 22, 10, rand, 0.2);
+const hullA = wobbleEllipse(772, 112, 62, 38, rand, { wobble: 0.06, rot: -0.3 });
+const hullB = wobbleEllipse(888, 198, 56, 40, rand, { wobble: 0.06, rot: 0.2 });
 ---
 <section id="ml" class="section" style="--accent: var(--teal)" aria-labelledby="ml-title">
   <div class="container">
@@ -34,6 +66,28 @@ const groups = [
         for the bound before the bigger GPU, and for the ablation before the anecdote.
       </p>
     </div>
+
+    <figure class="ml-scene-wrap">
+      <svg class="ml-scene" viewBox="0 0 1000 280" aria-hidden="true">
+        <!-- feed-forward net -->
+        {edges.map((d) => <path data-draw class="net-edge" d={d} />)}
+        {nodes.map(([x, y]) => <circle data-pop class="net-node" cx={x} cy={y} r="13" />)}
+        <!-- decision boundary -->
+        {cloudA.map(([x, y]) => <circle data-pop class="dot-a" cx={x.toFixed(1)} cy={y.toFixed(1)} r="4.5" />)}
+        {cloudB.map(([x, y]) => <circle data-pop class="dot-b" cx={x.toFixed(1)} cy={y.toFixed(1)} r="4.5" />)}
+        <path data-draw class="boundary" d={boundaryD} />
+        <!-- embedding hulls -->
+        {embA.map(([x, y]) => <circle data-pop class="dot-a" cx={x.toFixed(1)} cy={y.toFixed(1)} r="3.5" />)}
+        {embB.map(([x, y]) => <circle data-pop class="dot-b" cx={x.toFixed(1)} cy={y.toFixed(1)} r="3.5" />)}
+        <path data-draw class="hull" d={hullA} />
+        <path data-draw class="hull hull-b" d={hullB} />
+      </svg>
+      <figcaption class="visually-hidden">
+        Three sketches: a small feed-forward network, a decision boundary between two point
+        clouds, and an embedding scatter enclosed by two hulls.
+      </figcaption>
+    </figure>
+
     <div class="groups">
       {groups.map((g) => (
         <div class="group">
@@ -48,14 +102,16 @@ const groups = [
 </section>
 
 <style>
-  .groups {
-    margin-top: var(--s-7);
-    display: grid;
-    gap: var(--s-6);
-  }
-  .group h3 {
-    font-size: 1.0625rem;
-    font-weight: 500;
-    margin-bottom: var(--s-3);
-  }
+  .ml-scene-wrap { margin-block: var(--s-6) var(--s-5); }
+  .ml-scene { width: 100%; height: auto; overflow: visible; }
+  .net-edge { stroke: var(--ink-soft); stroke-width: 1.2; fill: none; opacity: 0.55; }
+  .net-node { fill: color-mix(in srgb, var(--teal) 22%, var(--paper)); stroke: var(--ink); stroke-width: 1.75; }
+  .dot-a { fill: var(--teal); }
+  .dot-b { fill: var(--ink-soft); }
+  .boundary { stroke: var(--ink); stroke-width: 2.25; fill: none; stroke-linecap: round; }
+  .hull { stroke: var(--teal); stroke-width: 1.75; fill: color-mix(in srgb, var(--teal) 8%, transparent); }
+  .hull-b { stroke: var(--ink-soft); fill: color-mix(in srgb, var(--ink-soft) 7%, transparent); }
+
+  .groups { margin-top: var(--s-6); display: grid; gap: var(--s-6); }
+  .group h3 { font-size: 1.0625rem; font-weight: 500; margin-bottom: var(--s-3); }
 </style>

@@ -22,6 +22,13 @@ const ROUTE = [
 // plate fill: domain section id -> plate index (scroll order, plan.md §3)
 const PLATE_SECTIONS = ['foundations', 'ml', 'vision', 'generative', 'mlops'];
 
+// pen state while traversing each section: down where the turtle has drawings to
+// make (hero/generative manage their own via scene waypoints), up elsewhere
+const SECTION_PEN = {
+  foundations: 'down', ml: 'down', vision: 'down', mlops: 'down',
+  work: 'down', notes: 'down', contact: 'down',
+};
+
 const state = {
   layer: null,
   guide: null,
@@ -72,7 +79,7 @@ export function measureTurtle() {
     const r = docRect(el);
     const x = laneX(side, docW, content, mobile);
     // tight insets keep lane-to-lane crossings inside the inter-section gaps
-    wps.push({ x, y: r.top + 28, pen: 'up', boundary: i > 0 });
+    wps.push({ x, y: r.top + 28, pen: SECTION_PEN[id] || 'up', boundary: i > 0 });
     const extra = state.extraWaypoints[id];
     if (extra && !mobile) {
       for (const w of extra(r)) wps.push({ ...w, boundary: false });
@@ -97,41 +104,41 @@ export function measureTurtle() {
   for (let i = 1; i < wps.length; i++) wps[i].anchor = Math.max(wps[i].anchor, wps[i - 1].anchor + 1);
 
   state.waypoints = wps;
-  state.guide.setAttribute('d', catmullRomPath(wps));
+  const path = catmullRomPath(wps);
+  state.guide.setAttribute('d', path.d);
+  state.samples = path;
+  // runtime positioning uses the browser's arc metric; scale the math lengths to it
   state.total = state.guide.getTotalLength();
-  state.cum = cumulativeLengths(wps);
+  const scale2 = path.total > 0 ? state.total / path.total : 1;
+  state.cum = path.wpCum.map((v) => v * scale2);
 }
 
+// build the Catmull-Rom path AND sample it mathematically in one pass: browser
+// getPointAtLength calls at this scale were the boot long-task (§13). Returns the
+// d string plus dense samples {xs, ys, cum} and exact arc lengths at each waypoint.
 function catmullRomPath(pts) {
-  if (pts.length < 2) return '';
+  if (pts.length < 2) return { d: '', xs: [], ys: [], cum: [], wpCum: [], total: 0 };
   const p = (i) => pts[Math.max(0, Math.min(pts.length - 1, i))];
   let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
+  const SUB = 24;
+  const xs = [pts[0].x], ys = [pts[0].y], cum = [0], wpCum = [0];
+  let arc = 0, px = pts[0].x, py = pts[0].y;
   for (let i = 0; i < pts.length - 1; i++) {
     const p0 = p(i - 1), p1 = p(i), p2 = p(i + 1), p3 = p(i + 2);
     const c1x = p1.x + (p2.x - p0.x) / 6, c1y = p1.y + (p2.y - p0.y) / 6;
     const c2x = p2.x - (p3.x - p1.x) / 6, c2y = p2.y - (p3.y - p1.y) / 6;
     d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
-  }
-  return d;
-}
-
-// approximate cumulative arc length at each waypoint by sampling the path
-function cumulativeLengths(wps) {
-  const N = 420;
-  const samples = [];
-  for (let i = 0; i <= N; i++) {
-    const pt = state.guide.getPointAtLength((i / N) * state.total);
-    samples.push(pt);
-  }
-  return wps.map((w) => {
-    let best = 0, bd = Infinity;
-    for (let i = 0; i <= N; i++) {
-      const dx = samples[i].x - w.x, dy = samples[i].y - w.y;
-      const d2 = dx * dx + dy * dy;
-      if (d2 < bd) { bd = d2; best = i; }
+    for (let k = 1; k <= SUB; k++) {
+      const t = k / SUB, u = 1 - t;
+      const x = u * u * u * p1.x + 3 * u * u * t * c1x + 3 * u * t * t * c2x + t * t * t * p2.x;
+      const y = u * u * u * p1.y + 3 * u * u * t * c1y + 3 * u * t * t * c2y + t * t * t * p2.y;
+      arc += Math.hypot(x - px, y - py);
+      px = x; py = y;
+      xs.push(x); ys.push(y); cum.push(arc);
     }
-    return (best / N) * state.total;
-  });
+    wpCum.push(arc);
+  }
+  return { d, xs, ys, cum, wpCum, total: arc };
 }
 
 function plateRanges() {
@@ -182,7 +189,9 @@ export function updateTurtle(y) {
 }
 
 export function guideInfo() {
-  return { guide: state.guide, total: state.total };
+  // samples: math-metric point/arc data for the vine (no browser path API needed);
+  // browserTotal lets consumers convert the turtle's browser-metric arc position
+  return { guide: state.guide, total: state.total, samples: state.samples, browserTotal: state.total };
 }
 
 export function initTurtle() {

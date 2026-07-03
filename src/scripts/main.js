@@ -9,16 +9,28 @@ import { initHeroScene } from './scenes/hero.js';
 import { initGenAiScene } from './scenes/genai.js';
 import { initInkSettle } from './scenes/ink.js';
 import { initHeadingReveals } from './scenes/headings.js';
+import { initVisionScene } from './scenes/vision.js';
+import { initSectionScenes, initNotesInteractive } from './scenes/sections.js';
 
 const anim = document.documentElement.classList.contains('anim');
 
+// functional (not decorative) enhancements run for every JS user, reduced motion included
+initNotesInteractive();
+
 if (anim) {
   // scenes register turtle waypoints, so they init before the turtle measures
+  performance.mark('b0');
   initHeroScene();
   initGenAiScene();
+  initVisionScene();
+  initSectionScenes();
+  performance.mark('b1');
   initInkSettle();
+  performance.mark('b2');
   initHeadingReveals();
+  performance.mark('b3');
   const hasTurtle = initTurtle();
+  performance.mark('b4');
 
   // progress hairline: 1px under the top bar, tinted to the current section's accent
   const hairline = document.getElementById('progress-hairline');
@@ -65,13 +77,17 @@ if (anim) {
   // font swaps); the turtle rebuilds its guide path, then the vine regrows on it
   if (hasTurtle) {
     onRemeasure(() => {
+      performance.mark('v0');
       remeasureTurtle();
-      if (hasVine) {
-        const { guide, total } = guideInfo();
-        measureVine(guide, total);
-      }
+      performance.mark('v1');
+      if (hasVine) measureVine(guideInfo());
+      performance.mark('v2');
     });
   }
 
   start();
+  performance.mark('b5');
+  for (const [m, a, b] of [['scenes', 'b0', 'b1'], ['ink', 'b1', 'b2'], ['headings', 'b2', 'b3'], ['turtle-init', 'b3', 'b4'], ['start+measure', 'b4', 'b5'], ['turtle-measure', 'v0', 'v1'], ['vine-measure', 'v1', 'v2']]) {
+    try { performance.measure(m, a, b); } catch {}
+  }
 }

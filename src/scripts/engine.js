@@ -89,9 +89,17 @@ export function start() {
   for (const s of scenes) s.update(seg(window.scrollY, s.start, s.end));
 
   let resizeT = 0;
+  let lastSize = `${document.documentElement.clientWidth}x${document.documentElement.scrollHeight}`;
   const remeasure = () => {
     clearTimeout(resizeT);
-    resizeT = setTimeout(measureAll, 150);
+    resizeT = setTimeout(() => {
+      // skip no-op re-measures (the ResizeObserver's initial fire would otherwise
+      // rebuild the vine a second time at boot — a full long-task for nothing)
+      const size = `${document.documentElement.clientWidth}x${document.documentElement.scrollHeight}`;
+      if (size === lastSize) return;
+      lastSize = size;
+      measureAll();
+    }, 150);
   };
   window.addEventListener('resize', remeasure, { passive: true });
   // document height changes (lazy images, fonts) shift every mapping
@@ -127,4 +135,16 @@ export function drawSequence(paths, s, a, b) {
   if (!n) return;
   const w = (b - a) / n;
   for (let i = 0; i < n; i++) setDraw(paths[i], seg(s, a + i * w, a + (i + 1) * w));
+}
+
+// pop [data-pop] elements (dots, chips, tapes) in sequence: opacity + scale settle
+export function popSequence(els, s, a, b) {
+  const n = els.length;
+  if (!n) return;
+  const w = (b - a) / n;
+  for (let i = 0; i < n; i++) {
+    const t = smooth(clamp01((s - (a + i * w)) / (w * 2.2 + 1e-9)));
+    els[i].style.opacity = t >= 1 ? '' : t.toFixed(3);
+    els[i].style.transform = t >= 1 ? '' : `scale(${(0.4 + 0.6 * t).toFixed(3)})`;
+  }
 }

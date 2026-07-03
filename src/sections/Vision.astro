@@ -1,7 +1,13 @@
 ---
-// §10.4 — Computer vision, SIGNATURE 2 of 4. Phase 1: mini-cards + reserved lead visual.
-// The bounding-box image reveal and pose skeleton arrive in Phase 3.
+// §10.4 — Computer vision, SIGNATURE 2 of 4. The turtle performs the bounding-box
+// image reveal (§8 variant 1) on the lead image: draws wobbled boxes, stamps mono
+// label chips, the image appears inside the box then expands, and a segmentation
+// tint scrubs 0 → 30% → 0 with scroll. A pose skeleton draws over the second image
+// (desktop; mobile keeps the box reveal and drops the skeleton, §10).
 import SectionHeader from '../components/SectionHeader.astro';
+import { mulberry32, wobbleRect } from '../lib/draw.mjs';
+
+const rand = mulberry32(20260714);
 
 // PLACEHOLDER projects — realistic but fake; replace with the owner's real work
 const projects = [
@@ -21,6 +27,30 @@ const projects = [
     chips: ['segmentation', 'tracking'],
   },
 ];
+
+// detections in cv-scene.webp coordinates (1280x853): the defect, then a healthy part
+const BOX1 = { x: 596, y: 352, w: 214, h: 172, label: 'defect 0.97' };
+const BOX2 = { x: 136, y: 414, w: 330, h: 202, label: 'part 0.88' };
+const box1D = wobbleRect(BOX1.x, BOX1.y, BOX1.w, BOX1.h, rand, { step: 46, amp: 5 });
+const box2D = wobbleRect(BOX2.x, BOX2.y, BOX2.w, BOX2.h, rand, { step: 52, amp: 5 });
+// clip-path insets for "the image appears inside the box" (fractions of the frame)
+const clip1 = {
+  top: ((BOX1.y / 853) * 100).toFixed(2),
+  right: (((1280 - BOX1.x - BOX1.w) / 1280) * 100).toFixed(2),
+  bottom: (((853 - BOX1.y - BOX1.h) / 853) * 100).toFixed(2),
+  left: ((BOX1.x / 1280) * 100).toFixed(2),
+};
+
+// pose skeleton joints (cv-pose.webp coordinates, 1000x750) — matches the figure
+const J = {
+  head: [505, 148], neck: [500, 210], hip: [490, 385],
+  kneeF: [560, 480], footF: [600, 585], kneeB: [420, 490], footB: [365, 590],
+  elbF: [585, 300], handF: [620, 370], elbB: [415, 295], handB: [385, 360],
+};
+const bones: [string, string][] = [
+  ['neck', 'hip'], ['neck', 'elbF'], ['elbF', 'handF'], ['neck', 'elbB'], ['elbB', 'handB'],
+  ['hip', 'kneeF'], ['kneeF', 'footF'], ['hip', 'kneeB'], ['kneeB', 'footB'],
+];
 ---
 <section id="vision" class="section" style="--accent: var(--leaf)" aria-labelledby="vision-title">
   <div class="container">
@@ -31,12 +61,52 @@ const projects = [
       glyphId="vision"
       lede="Systems that measure the physical world through cameras — built for real lighting, real occlusion, and real deadlines."
     />
-    <figure class="lead-visual">
-      <div class="visual-placeholder" style="aspect-ratio: 3 / 2;">
-        <p class="mono">lead visual — the bounding-box reveal lands here in Phase 3</p>
-      </div>
-      <figcaption class="mono muted">Detection output on a live line. <span class="placeholder-tag">placeholder</span></figcaption>
-    </figure>
+
+    <div class="cv-grid">
+      <figure class="cv-figure-wrap">
+        <div class="cv-figure" style={`--clip1: inset(${clip1.top}% ${clip1.right}% ${clip1.bottom}% ${clip1.left}%);`}>
+          <img
+            class="cv-img"
+            src="/img/cv-scene.webp"
+            alt="Inspection line with three machined parts on a conveyor; the middle part carries a highlighted surface defect — placeholder for a real detection frame"
+            width="1280" height="853" loading="lazy" decoding="async"
+          />
+          <div class="cv-seg" aria-hidden="true"></div>
+          <svg class="cv-overlay" viewBox="0 0 1280 853" preserveAspectRatio="none" aria-hidden="true">
+            <path data-draw class="cv-box" d={box1D} />
+            <g class="cv-chip" data-chip="1">
+              <rect x={BOX1.x} y={BOX1.y - 44} width="200" height="38" rx="6" />
+              <text x={BOX1.x + 14} y={BOX1.y - 17}>{BOX1.label}</text>
+            </g>
+            <path data-draw class="cv-box cv-box-2" d={box2D} />
+            <g class="cv-chip" data-chip="2">
+              <rect x={BOX2.x} y={BOX2.y - 44} width="152" height="38" rx="6" />
+              <text x={BOX2.x + 14} y={BOX2.y - 17}>{BOX2.label}</text>
+            </g>
+          </svg>
+        </div>
+        <figcaption class="mono muted">Detection output on a live line. <span class="placeholder-tag">placeholder</span></figcaption>
+      </figure>
+
+      <figure class="cv-pose-wrap">
+        <div class="cv-pose">
+          <img
+            src="/img/cv-pose.webp"
+            alt="Stylized figure mid-stride — placeholder for a real pose-estimation frame"
+            width="1000" height="750" loading="lazy" decoding="async"
+          />
+          <svg class="pose-svg" viewBox="0 0 1000 750" preserveAspectRatio="none" aria-hidden="true">
+            <circle data-draw class="pose-head" cx={J.head[0]} cy={J.head[1]} r="42" />
+            {bones.map(([a, b]) => (
+              <path data-draw class="pose-bone" d={`M ${J[a][0]} ${J[a][1]} L ${J[b][0]} ${J[b][1]}`} />
+            ))}
+            {Object.values(J).map(([x, y]) => <circle data-pop class="pose-joint" cx={x} cy={y} r="8" />)}
+          </svg>
+        </div>
+        <figcaption class="mono muted">Keypoints over a stride. <span class="placeholder-tag">placeholder</span></figcaption>
+      </figure>
+    </div>
+
     <ul class="cols-3 project-grid" role="list">
       {projects.map((p) => (
         <li class="card">
@@ -53,8 +123,59 @@ const projects = [
 </section>
 
 <style>
-  .lead-visual { margin-block: var(--s-6); }
-  .lead-visual figcaption { margin-top: var(--s-3); }
+  .cv-grid {
+    display: grid;
+    gap: var(--s-5);
+    margin-block: var(--s-6);
+  }
+  @media (min-width: 1024px) {
+    .cv-grid { grid-template-columns: 3fr 2fr; align-items: start; }
+  }
+  .cv-figure, .cv-pose {
+    position: relative;
+    border-radius: var(--radius-lg);
+    background: var(--paper-deep);
+    overflow: hidden;
+  }
+  .cv-figure img, .cv-pose img { width: 100%; height: auto; display: block; }
+  /* finished state: full image visible; the engine scrubs from --clip1 to none */
+  .cv-img { clip-path: none; }
+  .cv-seg {
+    position: absolute;
+    inset: 0;
+    background: var(--leaf);
+    mask-image: url(/img/cv-seg.webp);
+    mask-size: 100% 100%;
+    -webkit-mask-image: url(/img/cv-seg.webp);
+    -webkit-mask-size: 100% 100%;
+    opacity: 0; /* finished state: tint off (it scrubs 0 -> 30% -> 0 mid-scene) */
+    pointer-events: none;
+  }
+  .cv-overlay, .pose-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: visible;
+  }
+  .cv-box { stroke: var(--leaf); stroke-width: 4.5; fill: none; stroke-linejoin: round; }
+  .cv-box-2 { stroke: var(--teal); }
+  .cv-chip rect { fill: var(--leaf); }
+  .cv-chip[data-chip="2"] rect { fill: var(--teal); }
+  .cv-chip text {
+    font-family: var(--font-mono);
+    font-size: 26px;
+    letter-spacing: 0.04em;
+    fill: var(--paper);
+  }
+  .pose-head, .pose-bone { stroke: var(--leaf); stroke-width: 5; fill: none; stroke-linecap: round; }
+  .pose-joint { fill: var(--cobalt); }
+  @media (max-width: 719px) {
+    /* mobile keeps the bounding-box reveal, drops the skeleton (§10.4) */
+    .pose-svg { display: none; }
+  }
+
   .project-grid { margin-top: var(--s-6); padding: 0; list-style: none; }
   .card h3 { margin-bottom: var(--s-3); }
   .proj-line { margin-bottom: var(--s-4); }

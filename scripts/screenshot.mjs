@@ -17,29 +17,39 @@ const VIEWPORTS = [
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// scroll targets: hero mid-draw, GenAI mid-crossfade (s~.45), GenAI settled (s~.93),
-// plus two vine-depth checks (work section, page end)
-async function targets(page) {
-  return page.evaluate(() => {
+// scroll targets across every scene, mid-draw where possible
+async function targets(page, mobile) {
+  return page.evaluate((isMobile) => {
     const vh = window.innerHeight;
-    const gen = document.getElementById('generative');
-    const r = gen.getBoundingClientRect();
-    const top = r.top + window.scrollY;
-    const bottom = r.bottom + window.scrollY;
-    const start = top - vh * 0.8;
-    const end = bottom - vh * 0.6;
-    const at = (s) => Math.round(start + s * (end - start));
-    const work = document.getElementById('work');
-    const workY = Math.round(work.getBoundingClientRect().top + window.scrollY - vh * 0.4);
+    const topOf = (sel) => {
+      const el = document.querySelector(sel);
+      return el ? el.getBoundingClientRect().top + window.scrollY : 0;
+    };
+    const gen = document.getElementById('generative').getBoundingClientRect();
+    const gTop = gen.top + window.scrollY;
+    const gBottom = gen.bottom + window.scrollY;
+    const gStart = gTop - vh * 0.8;
+    const gEnd = gBottom - vh * 0.6;
+    const at = (s) => Math.round(gStart + s * (gEnd - gStart));
     const endY = document.documentElement.scrollHeight - vh;
-    return {
+    const all = {
       'hero-mid': Math.round(vh * 0.5),
+      'fnd-mid': Math.round(topOf('.fnd-orbit') - vh * 0.5),
+      'ml-mid': Math.round(topOf('.ml-scene') - vh * 0.5),
+      'vision-mid': Math.round(topOf('.cv-figure') - vh * 0.62),
+      'vision-late': Math.round(topOf('.cv-figure') - vh * 0.3),
       'genai-mid': at(0.45),
-      'genai-late': at(0.93),
-      'work-vine': workY,
+      'mlops-mid': Math.round(topOf('.pipeline-h') - vh * 0.55),
+      'work-lead': Math.round(topOf('.cs-rows') - vh * 0.48),
+      'notes-mid': Math.round(topOf('.notes-graph') - vh * 0.55),
+      'sig-mid': Math.round(topOf('.signature') - vh * 0.52),
       'page-end': endY,
     };
-  });
+    if (isMobile) {
+      return { 'hero-mid': all['hero-mid'], 'vision-mid': all['vision-mid'], 'genai-mid': all['genai-mid'], 'page-end': all['page-end'] };
+    }
+    return all;
+  }, mobile);
 }
 
 const browser = await puppeteer.launch({
@@ -53,7 +63,7 @@ for (const vp of VIEWPORTS) {
   await page.setViewport(vp);
   await page.goto(BASE, { waitUntil: 'networkidle0' });
   await sleep(400);
-  const pos = await targets(page);
+  const pos = await targets(page, vp.name === 'mobile');
   for (const [name, y] of Object.entries(pos)) {
     await page.evaluate((yy) => window.scrollTo(0, yy), y);
     await sleep(900); // micro-eases settle; lazy images decode
