@@ -69,24 +69,17 @@ public/resume.pdf           PLACEHOLDER — replace with the real résumé
 
 ## Placeholders — replace before launch (plan.md §11)
 
-Everything below is deliberately fake or bracketed. Nothing here should survive to production.
+Most owner content is now real (branch `content/ibtisam`): name, physics narrative, ML stack,
+vision/generative project cards (résumé-level, no client names), MLOps stats, seven notes
+(three linking to the live Small Diary), and contact links. Still pending:
 
 | Item | Where | Replace with |
 |---|---|---|
-| `[Owner Name]` | `src/components/TopBar.astro`, `src/components/SiteFooter.astro`, `src/layouts/Base.astro` (title + description), `src/sections/Hero.astro` | The owner's name |
-| `[SITE_URL]` (`https://example.com`) | `astro.config.mjs` | Production URL |
-| Thesis + roles line | `src/sections/Hero.astro` | Owner's tagline and role line (brief default provided) |
-| Physics/math narrative | `src/sections/Foundations.astro` | Personalized essay paragraphs |
-| Skill chip groups | `src/sections/MlCore.astro` | Owner's real toolkit |
-| 3 vision projects | `src/sections/Vision.astro` | Real projects |
-| 3 generative-AI projects | `src/sections/GenerativeAi.astro` | Real projects |
-| Stat chips (38 ms / 99.95% / 14) | `src/sections/Mlops.astro` | Real production metrics (visibly tagged `placeholder metrics` until then) |
-| 3 case studies + `[CASE_STUDY_URL]` | `src/sections/CaseStudies.astro` | Real case studies on the same Problem → Approach → Result template |
-| 6 note titles | `src/sections/NotesGarden.astro` | Real notes (dates/tags included) |
-| `[EMAIL]`, `[GITHUB_URL]`, `[LINKEDIN_URL]`, `[SCHOLAR_URL]`, `[City] · [Timezone]` | `src/sections/Contact.astro` | Real contact links (become live buttons when supplied) |
-| `public/resume.pdf` | one-page stub PDF | The real résumé PDF |
+| `[LINKEDIN_URL]` | `src/sections/Contact.astro` | Real LinkedIn profile URL |
+| `public/resume.pdf` | stub PDF | The real résumé PDF (also update the "PDF · one page" caption if two pages) |
+| 3 case studies + `[CASE_STUDY_URL]` | `src/sections/CaseStudies.astro` | Real CCTV/PPE/BookMyShow write-ups on the Problem → Approach → Result template, when the owner supplies the data |
+| `[SITE_URL]` (`https://example.com`) | `astro.config.mjs`, `public/robots.txt` | Production URL (then rebuild for sitemap/canonical/OG URLs) |
 | Headshot | not yet placed | Optional — receives the contour-first reveal (§8) if supplied |
-| Signature | `src/sections/Contact.astro` (generated single-stroke placeholder) | Optional `SIGNATURE_SVG` — swap the two paths + dot inside `.signature` |
-| CV + case-study imagery | `public/img/cv-*.webp`, `shot-*.webp` (stylized fakes from `scripts/`) | Real project frames/screenshots (keep the dimensions; update box coords in `Vision.astro`) |
-| `[SITE_URL]` | `astro.config.mjs`, `public/robots.txt` | Production URL (then rebuild for sitemap/canonical/OG URLs) |
-| OG image | `public/og.png` (carries `[Owner Name]`) | Rerun `python scripts/make-og.py` after renaming |
+| Signature | `src/sections/Contact.astro` (generated single-stroke) | Optional `SIGNATURE_SVG` — swap the two paths + dot inside `.signature` |
+| Project imagery | `public/img/cv-*.webp`, `shot-*.webp` | Stylized recreations by design (client work is private); swap only if shareable assets appear |
+| Unpublished notes (year-only dates) | `src/sections/NotesGarden.astro` | Publish to the Small Diary and add `href`s |

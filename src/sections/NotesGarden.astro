@@ -5,29 +5,32 @@
 // quiet: mixed-hue dots, one soft wash.
 import SectionHeader from '../components/SectionHeader.astro';
 
-// PLACEHOLDER note titles — replace with the owner's real notes
+// real notes: the first three live in the Small Diary (linked); the rest are
+// unpublished write-ups of shipped work — year-only dates until they're posted
+const DIARY = 'https://ibtisam-mohammad.github.io';
 const notes = [
-  { title: 'Attention as kernel regression', date: 'Mar 2026', datetime: '2026-03', tags: [{ t: 'theory', a: 'cobalt' }, { t: 'transformers', a: 'teal' }] },
-  { title: 'What the SVD knows about your embeddings', date: 'Jan 2026', datetime: '2026-01', tags: [{ t: 'linear algebra', a: 'cobalt' }] },
-  { title: 'Calibration before confidence', date: 'Nov 2025', datetime: '2025-11', tags: [{ t: 'probability', a: 'cobalt' }, { t: 'evals', a: 'violet' }] },
-  { title: 'The learning rate is a physical quantity', date: 'Sep 2025', datetime: '2025-09', tags: [{ t: 'optimization', a: 'cobalt' }] },
-  { title: 'Segment anything, measure something', date: 'Jun 2025', datetime: '2025-06', tags: [{ t: 'vision', a: 'leaf' }] },
-  { title: 'Drift is a distribution, not an alarm', date: 'Apr 2025', datetime: '2025-04', tags: [{ t: 'mlops', a: 'ember' }] },
+  { title: 'Fitting a 7B agent into 12 GB of VRAM', date: 'Dec 2025', datetime: '2025-12', href: `${DIARY}/fara-7b`, tags: [{ t: 'agents', a: 'violet' }, { t: 'quantization', a: 'cobalt' }] },
+  { title: 'A mining rig’s second life as an ML box', date: 'Jan 2026', datetime: '2026-01', href: `${DIARY}/`, tags: [{ t: 'hardware', a: 'ember' }, { t: 'llm', a: 'violet' }] },
+  { title: 'The bottleneck was the bus, not the model', date: 'Jan 2026', datetime: '2026-01', href: `${DIARY}/`, tags: [{ t: 'speech', a: 'teal' }, { t: 'hardware', a: 'ember' }] },
+  { title: 'What DINO notices when a camera moves', date: '2025', datetime: '2025', tags: [{ t: 'vision', a: 'leaf' }] },
+  { title: 'Nginx was the latency all along', date: '2025', datetime: '2025', tags: [{ t: 'mlops', a: 'ember' }] },
+  { title: 'Full-body pose from half a body', date: '2024', datetime: '2024', tags: [{ t: 'vision', a: 'leaf' }] },
+  { title: 'Judging the judge: evaluating LLM outputs', date: '2025', datetime: '2025', tags: [{ t: 'evals', a: 'teal' }, { t: 'llm', a: 'violet' }] },
 ];
 
-// the graph: one node per tag, hand-laid layout, curved edges between related ideas
+// the graph: one node per topic, hand-laid layout, curved edges between related ideas
 const nodes = [
-  { tag: 'theory', x: 150, y: 62, a: 'cobalt' },
-  { tag: 'transformers', x: 66, y: 128, a: 'teal' },
-  { tag: 'linear algebra', x: 236, y: 116, a: 'cobalt' },
-  { tag: 'probability', x: 96, y: 208, a: 'cobalt' },
-  { tag: 'optimization', x: 212, y: 200, a: 'cobalt' },
-  { tag: 'evals', x: 52, y: 284, a: 'violet' },
+  { tag: 'llm', x: 150, y: 62, a: 'violet' },
+  { tag: 'agents', x: 66, y: 128, a: 'violet' },
+  { tag: 'quantization', x: 236, y: 116, a: 'cobalt' },
+  { tag: 'evals', x: 96, y: 208, a: 'teal' },
+  { tag: 'hardware', x: 212, y: 200, a: 'ember' },
+  { tag: 'speech', x: 52, y: 284, a: 'teal' },
   { tag: 'vision', x: 162, y: 290, a: 'leaf' },
   { tag: 'mlops', x: 254, y: 280, a: 'ember' },
 ];
 const edgePairs: [number, number][] = [
-  [0, 1], [0, 2], [0, 3], [0, 4], [3, 5], [1, 5], [4, 7], [6, 7], [2, 6],
+  [0, 1], [0, 2], [2, 4], [4, 5], [0, 3], [1, 3], [6, 7], [4, 7], [0, 6],
 ];
 const edges = edgePairs.map(([i, j]) => {
   const a = nodes[i], b = nodes[j];
@@ -45,14 +48,14 @@ const edges = edgePairs.map(([i, j]) => {
       title="Notes"
       headingId="notes-title"
       glyphId="notes"
-      lede="Working notes on the math behind the models — short, specific, and kept honest."
+      lede="Working notes from the home lab and the job — short, specific, and kept honest."
     />
     <div class="notes-layout">
       <ol class="notes-list" role="list">
         {notes.map((n) => (
           <li class="note" data-tags={n.tags.map((t) => t.t).join('|')}>
             <time class="mono muted" datetime={n.datetime}>{n.date}</time>
-            <span class="note-title">{n.title}</span>
+            <span class="note-title">{n.href ? <a href={n.href}>{n.title}</a> : n.title}</span>
             <ul class="chip-row note-tags" role="list">
               {n.tags.map((tag) => (
                 <li class="chip" style={`--accent: var(--${tag.a})`}>{tag.t}</li>
@@ -81,6 +84,7 @@ const edges = edgePairs.map(([i, j]) => {
         </svg>
         <figcaption class="mono muted">the graph is an index — tap a topic.</figcaption>
       </figure>
+      <p class="mono muted diary-link">more in the <a href={`${DIARY}/`}>small diary →</a></p>
     </div>
   </div>
 </section>
@@ -133,4 +137,5 @@ const edges = edgePairs.map(([i, j]) => {
     text-anchor: middle;
   }
   .notes-graph-wrap figcaption { margin-top: var(--s-3); }
+  .diary-link { grid-column: 1; margin-top: var(--s-2); }
 </style>

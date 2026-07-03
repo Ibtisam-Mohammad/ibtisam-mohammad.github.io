@@ -8,19 +8,18 @@ import { mulberry32, wobbleEllipse, scatter } from '../lib/draw.mjs';
 
 const rand = mulberry32(20260713);
 
-// PLACEHOLDER: adjust skill groups to the owner's real toolkit
 const groups = [
   {
-    name: 'Learning theory',
-    skills: ['generalization', 'bias–variance', 'kernel methods', 'information theory', 'causal inference'],
-  },
-  {
     name: 'Deep learning',
-    skills: ['transformers', 'attention', 'convnets', 'sequence models', 'self-supervision', 'diffusion'],
+    skills: ['PyTorch', 'TensorFlow', 'Hugging Face', 'scikit-learn'],
   },
   {
-    name: 'Tooling',
-    skills: ['PyTorch', 'JAX', 'scikit-learn', 'Hugging Face', 'Optuna', 'Weights & Biases'],
+    name: 'LLM systems',
+    skills: ['LangGraph', 'Langfuse', 'Deepeval', 'sentence-transformers', 'Ollama'],
+  },
+  {
+    name: 'Backend & tooling',
+    skills: ['Python', 'FastAPI', 'Docker', 'Git', 'Linux'],
   },
 ];
 
@@ -62,8 +61,9 @@ const hullB = wobbleEllipse(888, 198, 56, 40, rand, { wobble: 0.06, rot: 0.2 });
     />
     <div class="prose">
       <p>
-        Theory earns its keep here — it is how you debug a model you cannot print. I reach
-        for the bound before the bigger GPU, and for the ablation before the anecdote.
+        Three years of taking models from notebook to production. Theory earns its keep
+        here — it is how you debug a model you cannot print — but so does the unglamorous
+        stack around it: the API, the queue, the reverse proxy nobody else wants to read.
       </p>
     </div>
 

@@ -9,22 +9,23 @@ import { mulberry32, wobbleRect } from '../lib/draw.mjs';
 
 const rand = mulberry32(20260714);
 
-// PLACEHOLDER projects — realistic but fake; replace with the owner's real work
+// real work (résumé-level detail; richer case data may follow)
 const projects = [
   {
-    name: 'Line-speed defect detection',
-    line: 'Micro-defect detection on a moving production line, tuned for recall at a fixed false-positive budget.',
-    chips: ['detection', 'edge deployment'],
+    name: 'Multi-stream CCTV security service',
+    line: 'A real-time detection microservice (YOLOv11, DETR) watching many camera streams at once — integrated with plate, face, and mask recognition, plus DINO-embedding checks for camera movement and obstruction.',
+    chips: ['detection', 'streaming'],
   },
   {
-    name: 'Pose for physiotherapy',
-    line: 'Keypoint tracking that survives loose clothing and home lighting, with clinician-readable reports.',
-    chips: ['pose estimation', 'on-device'],
+    name: 'Pose from partial bodies',
+    line: 'RTMPose fine-tuned to produce full-body keypoints — hands and limbs included — from partial-body inputs, alongside SAM fine-tuned for fine-grained garment segmentation.',
+    chips: ['pose estimation', 'fine-tuning'],
   },
   {
-    name: 'Single-camera shelf analytics',
-    line: 'Planogram compliance and stock-out detection from one fixed camera per aisle.',
-    chips: ['segmentation', 'tracking'],
+    name: 'Vehicle wait-time detection',
+    line: 'Detection and tracking inside drawn regions of interest to measure how long vehicles actually wait.',
+    chips: ['tracking', 'open source'],
+    href: 'https://github.com/Ibtisam-Mohammad/Vehicle_Wait_Time_Detector',
   },
 ];
 
@@ -85,7 +86,7 @@ const bones: [string, string][] = [
             </g>
           </svg>
         </div>
-        <figcaption class="mono muted">Detection output on a live line. <span class="placeholder-tag">placeholder</span></figcaption>
+        <figcaption class="mono muted">Detection output. <span class="placeholder-tag">stylized recreation — client footage stays private</span></figcaption>
       </figure>
 
       <figure class="cv-pose-wrap">
@@ -103,7 +104,7 @@ const bones: [string, string][] = [
             {Object.values(J).map(([x, y]) => <circle data-pop class="pose-joint" cx={x} cy={y} r="8" />)}
           </svg>
         </div>
-        <figcaption class="mono muted">Keypoints over a stride. <span class="placeholder-tag">placeholder</span></figcaption>
+        <figcaption class="mono muted">Keypoints over a stride. <span class="placeholder-tag">stylized recreation</span></figcaption>
       </figure>
     </div>
 
@@ -115,7 +116,7 @@ const bones: [string, string][] = [
           <ul class="chip-row" role="list">
             {p.chips.map((c) => <li class="chip">{c}</li>)}
           </ul>
-          <p><span class="placeholder-tag">placeholder</span></p>
+          {p.href && <p class="mono proj-link"><a href={p.href}>view the repo →</a></p>}
         </li>
       ))}
     </ul>
@@ -180,4 +181,5 @@ const bones: [string, string][] = [
   .card h3 { margin-bottom: var(--s-3); }
   .proj-line { margin-bottom: var(--s-4); }
   .card .chip-row { margin-bottom: var(--s-4); }
+  .proj-link { font-size: var(--step--1); }
 </style>

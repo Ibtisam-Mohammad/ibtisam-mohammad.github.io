@@ -7,22 +7,22 @@
 // defaults; the engine rewinds them. Text sits on paper or paper-deep scrims only.
 import StrokeHeading from '../components/StrokeHeading.astro';
 
-// PLACEHOLDER projects — realistic but fake; replace with the owner's real work
+// real work (résumé-level detail; richer case data may follow)
 const projects = [
   {
-    name: 'Grounded support assistant',
-    line: 'Retrieval before generation: answers cite their source passages and refuse when the evidence is thin.',
-    chips: ['RAG', 'evals'],
+    name: 'Outfit visualization in production',
+    line: 'AI try-on and background replacement — Automatic1111 with custom diffusion wrappers, load balancers with instance warmup to survive traffic spikes without burning idle GPU money.',
+    chips: ['diffusion', 'production'],
   },
   {
-    name: 'Product imagery diffusion',
-    line: 'Brand-constrained image generation with layout conditioning for a catalog team.',
-    chips: ['diffusion', 'fine-tuning'],
+    name: 'Face swap at ~1 s per image',
+    line: 'A production face-swap web app for a major ticketing platform — concept to launch in about four weeks, holding fidelity at one second of inference.',
+    chips: ['diffusion', 'latency'],
   },
   {
-    name: 'Latent-space tooling',
-    line: 'Interactive latent exploration that lets a design team steer a generative model without prompts.',
-    chips: ['representation', 'tooling'],
+    name: 'Campaign agent',
+    line: 'An LLM that turns a single description into schedule, audience, content, and tone — with messaging integrations and CRM writeback, cutting campaign creation to minutes.',
+    chips: ['agents', 'LLM'],
   },
 ];
 
@@ -95,7 +95,7 @@ const scribbles = [scribble(790, 130), scribble(860, 240), scribble(730, 200)];
           <path data-part="frame" data-draw d={frameD} class="gen-frame-path" />
         </svg>
       </div>
-      <figcaption class="mono muted">Noise → structure: four pre-rendered denoising steps, scrubbed by scroll. <span class="placeholder-tag">placeholder</span></figcaption>
+      <figcaption class="mono muted">Noise → structure: four pre-rendered denoising steps, scrubbed by scroll. <span class="placeholder-tag">abstract stand-in — client generations stay private</span></figcaption>
     </figure>
 
     <!-- diffusion-trajectory doodle: dots converging along a curve (margin annotation) -->
@@ -119,7 +119,6 @@ const scribbles = [scribble(790, 130), scribble(860, 240), scribble(730, 200)];
           <ul class="chip-row" role="list">
             {p.chips.map((c) => <li class="chip">{c}</li>)}
           </ul>
-          <p><span class="placeholder-tag">placeholder</span></p>
         </li>
       ))}
     </ul>

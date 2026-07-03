@@ -85,12 +85,12 @@ const descentD = `M ${steps.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).j
     </svg>
 
     <SectionHeader num="02" title="Physics &amp; mathematics" headingId="foundations-title" glyphId="foundations" />
-    <!-- PLACEHOLDER: personalize this narrative to the owner's actual background -->
     <div class="prose">
       <p>
-        My route into machine learning ran through classical mechanics and linear algebra,
-        and it shows in how I work: I want the model class written down, the assumptions
-        explicit, and the failure modes named before anything ships.
+        My route into machine learning ran through theoretical nuclear physics — a master's
+        spent on systems nobody can observe directly, where every claim rides on the
+        mathematics being right. It shows in how I work: I want the model class written
+        down, the assumptions explicit, and the failure modes named before anything ships.
       </p>
       <p>
         Physics teaches a specific kind of taste — prefer the smallest system that still
@@ -100,6 +100,9 @@ const descentD = `M ${steps.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).j
       <p>
         The four tools below do most of the work. Everything later on this page — vision
         models, generative systems, production pipelines — is these four, applied with care.
+      </p>
+      <p class="mono muted edu-line">
+        MSc Physics, Central University of Kashmir · theoretical nuclear physics
       </p>
     </div>
     <ul class="cols-2 foundation-grid" role="list">
@@ -145,6 +148,7 @@ const descentD = `M ${steps.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).j
   .orbit-vel { stroke: var(--ink-soft); stroke-width: 1.5; fill: none; stroke-linecap: round; }
   .field-arrow { stroke: var(--ink-soft); stroke-width: 1.4; fill: none; stroke-linecap: round; opacity: 0.8; }
 
+  .edu-line { margin-top: var(--s-4); }
   .foundation-grid { margin-top: var(--s-7); padding: 0; list-style: none; }
   .foundation-card h3 {
     font-family: var(--font-mono);

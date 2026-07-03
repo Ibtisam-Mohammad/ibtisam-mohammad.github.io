@@ -70,8 +70,7 @@ display = ImageFont.truetype(str(CACHE / f"{FACES['display']}.ttf"), 88)
 serif = ImageFont.truetype(str(CACHE / f"{FACES['serif']}.ttf"), 40)
 mono = ImageFont.truetype(str(CACHE / f"{FACES['mono']}.ttf"), 26)
 
-# PLACEHOLDER: [OWNER_NAME]
-d.text((84, 168), "[Owner Name]", font=display, fill=INK)
+d.text((84, 168), "Ibtisam", font=display, fill=INK)
 d.text((86, 300), "I build AI systems", font=serif, fill=SOFT)
 d.text((86, 352), "from first principles.", font=serif, fill=SOFT)
 for i, c in enumerate(ACCENTS):
