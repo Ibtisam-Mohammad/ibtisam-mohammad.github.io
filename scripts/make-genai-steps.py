@@ -92,8 +92,10 @@ def make_final():
     return Image.fromarray(img.astype(np.uint8))
 
 
-def save(img, name, q=74):
+def save(img, name, q=74, downscale=None):
     p = OUT / name
+    if downscale:
+        img = img.resize(downscale, Image.LANCZOS)
     img.save(p, "WEBP", quality=q, method=6)
     print(f"{name}  {p.stat().st_size / 1024:.1f} KB")
 
@@ -115,8 +117,9 @@ a2 = np.asarray(s2, float)
 a2 = np.round(a2 / 40) * 40
 a2 = np.asarray(Image.fromarray(a2.astype(np.uint8)).filter(ImageFilter.GaussianBlur(10)), float)
 n2 = noise2d((H, W), base=14, octaves=3)[..., None]
+# noise-dominated steps ship at 1024x640: invisible under the crossfade, half the bytes
 a2 = a2 * (0.7 + 0.6 * n2) + rng.normal(0, 26, (H, W, 3))
-save(Image.fromarray(np.clip(a2, 0, 255).astype(np.uint8)), "gen-step-2.webp", q=58)
+save(Image.fromarray(np.clip(a2, 0, 255).astype(np.uint8)), "gen-step-2.webp", q=42, downscale=(1024, 640))
 
 # step 1 — (almost) pure noise, violet-gray, with an 8% ghost of the final
 ghost = np.asarray(final.filter(ImageFilter.GaussianBlur(60)), float)
@@ -124,6 +127,6 @@ base_gray = PAPER * 0.35 + VIOLET * 0.12 + INK * 0.35
 nz = rng.normal(0, 1, (H // 2, W // 2, 3)) * 34
 nz = np.asarray(Image.fromarray(np.clip(base_gray + nz, 0, 255).astype(np.uint8)).resize((W, H), Image.BILINEAR), float)
 a1 = np.clip(nz * 0.92 + ghost * 0.08, 0, 255)
-save(Image.fromarray(a1.astype(np.uint8)), "gen-step-1.webp", q=55)
+save(Image.fromarray(a1.astype(np.uint8)), "gen-step-1.webp", q=46, downscale=(1024, 640))
 
 print("done ->", OUT)
