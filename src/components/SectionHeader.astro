@@ -1,0 +1,21 @@
+---
+// Section header: mono kicker (number + accent dot) above the h2.
+// With a glyphId, the h2 becomes a stroke-reveal heading (§6 rule 2) — the turtle-ink
+// treatment drawn in sync with scroll. Accent color reaches the dot via the section's
+// --accent custom property; accent hues are never used for body text (plan.md §5).
+import StrokeHeading from './StrokeHeading.astro';
+
+interface Props {
+  num: string;
+  title: string;
+  headingId: string;
+  lede?: string;
+  glyphId?: string;
+}
+const { num, title, headingId, lede, glyphId } = Astro.props;
+---
+<header class="section-head">
+  <p class="kicker" aria-hidden="true"><span class="kicker-dot"></span><span>{num}</span></p>
+  {glyphId ? <StrokeHeading glyphId={glyphId} headingId={headingId} /> : <h2 id={headingId}>{title}</h2>}
+  {lede && <p class="lede">{lede}</p>}
+</header>

@@ -1,0 +1,52 @@
+---
+import '../styles/tokens.css';
+import '../styles/global.css';
+import TopBar from '../components/TopBar.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import TurtleOverlay from '../components/TurtleOverlay.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+// PLACEHOLDER: [OWNER_NAME] in both defaults
+const {
+  title = '[Owner Name] — AI systems, drawn from first principles',
+  description = 'Portfolio of [Owner Name]: machine learning engineer with a physics and mathematics background. Vision, generative AI, and production ML systems.',
+} = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#FCF8EF" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preload" href="/fonts/bricolage-grotesque-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/source-serif-4-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- classes gate the animation system: no JS -> finished states in markup;
+         reduced motion -> `js` without `anim`, so no scroll-scrubbed motion ever runs -->
+    <script is:inline>
+      var de = document.documentElement;
+      de.classList.add('js');
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) de.classList.add('anim');
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <TopBar />
+    <main id="main">
+      <slot />
+    </main>
+    <SiteFooter />
+    <TurtleOverlay />
+    <script>
+      import '../scripts/main.js';
+    </script>
+  </body>
+</html>

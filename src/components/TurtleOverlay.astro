@@ -1,0 +1,41 @@
+---
+// Document-spanning turtle layer (plan.md §3). Hidden without JS or with reduced
+// motion (html.anim gates it); the guide path is invisible math, the turtle rides it.
+// Plate sectors sit under the seams and fill with each domain's accent as it is
+// traversed: cobalt -> teal -> leaf -> violet -> ember, in scroll order.
+---
+<!-- vine layer sits BELOW content (washes < vine < content); the turtle rides above -->
+<div id="vine-layer" aria-hidden="true">
+  <svg id="turtle-guide-svg" preserveAspectRatio="none">
+    <path id="turtle-guide" fill="none" stroke="none" d="M 0 0 L 0 1"></path>
+  </svg>
+</div>
+<div id="turtle-layer" aria-hidden="true">
+  <svg id="turtle" viewBox="-13.5 -10.5 30 21" width="34" height="23.8">
+    <g id="turtle-inner">
+      <!-- plate sectors (fill as sections are traversed) -->
+      <path data-plate="0" d="M0 0 L6.88 -5 A8.5 8.5 0 0 1 6.88 5 Z" fill="#2B59C3" fill-opacity="0" />
+      <path data-plate="1" d="M0 0 L6.88 5 A8.5 8.5 0 0 1 -2.63 8.08 Z" fill="#0E8A78" fill-opacity="0" />
+      <path data-plate="2" d="M0 0 L-2.63 8.08 A8.5 8.5 0 0 1 -8.5 0 Z" fill="#4E9B35" fill-opacity="0" />
+      <path data-plate="3" d="M0 0 L-8.5 0 A8.5 8.5 0 0 1 -2.63 -8.08 Z" fill="#7A4FD6" fill-opacity="0" />
+      <path data-plate="4" d="M0 0 L-2.63 -8.08 A8.5 8.5 0 0 1 6.88 -5 Z" fill="#E0731D" fill-opacity="0" />
+      <!-- ink line work: tail, feet, head, shell, plate seams. No face. -->
+      <g fill="none" stroke="var(--ink)" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M-8.5 0 L-11.8 0" stroke-width="1.9" />
+        <path d="M4.4 4.4 L6.3 6.3" stroke-width="1.9" />
+        <path d="M-4.4 4.4 L-6.3 6.3" stroke-width="1.9" />
+        <path d="M-4.4 -4.4 L-6.3 -6.3" stroke-width="1.9" />
+        <path d="M4.4 -4.4 L6.3 -6.3" stroke-width="1.9" />
+        <path d="M8.3 -3.9 L15 0 L8.3 3.9 Z" stroke-width="1.7" fill="var(--paper)" />
+        <circle cx="0" cy="0" r="8.5" stroke-width="1.8" fill="none" />
+        <g stroke-width="0.9" opacity="0.55">
+          <path d="M0 0 L6.88 -5" />
+          <path d="M0 0 L6.88 5" />
+          <path d="M0 0 L-2.63 8.08" />
+          <path d="M0 0 L-8.5 0" />
+          <path d="M0 0 L-2.63 -8.08" />
+        </g>
+      </g>
+    </g>
+  </svg>
+</div>

@@ -1,0 +1,92 @@
+---
+// Sticky top bar (plan.md §9): mark + name left; Work · Notes · Contact; persistent Résumé button.
+// The 1px scroll-progress hairline arrives with the scroll engine in Phase 2.
+import TurtleMark from './TurtleMark.astro';
+---
+<header class="topbar">
+  <div class="container topbar-inner">
+    <!-- aria-label keeps the accessible name when .brand-name is hidden at narrow widths -->
+    <!-- PLACEHOLDER: [OWNER_NAME] -->
+    <a class="brand" href="#hero" aria-label="[Owner Name] — home">
+      <TurtleMark size={26} />
+      <span class="brand-name" aria-hidden="true">[Owner Name]</span>
+    </a>
+    <nav aria-label="Site">
+      <ul class="topnav">
+        <li><a href="#work">Work</a></li>
+        <li><a href="#notes">Notes</a></li>
+        <li><a href="#contact">Contact</a></li>
+        <li>
+          <a class="btn btn-primary btn-bar" href="/resume.pdf" download>Résumé</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+  <div id="progress-hairline" aria-hidden="true"></div>
+</header>
+
+<style>
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-bar);
+    background: color-mix(in srgb, var(--paper) 92%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+  }
+  /* scroll-progress hairline, tinted to the current section's accent (plan.md §9) */
+  #progress-hairline {
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    width: 100%;
+    height: 2px;
+    background: var(--cobalt);
+    transform: scaleX(0);
+    transform-origin: 0 50%;
+    display: none;
+  }
+  :global(html.anim) #progress-hairline { display: block; }
+  .topbar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-4);
+    min-height: 64px;
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-3);
+    text-decoration: none;
+    color: var(--ink);
+    padding-block: var(--s-2);
+  }
+  .brand-name {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 1.0625rem;
+  }
+  .topnav {
+    display: flex;
+    align-items: center;
+    gap: clamp(var(--s-4), 2.5vw, var(--s-6));
+    list-style: none;
+    padding: 0;
+  }
+  .topnav a:not(.btn) {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 0.9375rem;
+    text-decoration: none;
+    color: var(--ink);
+    padding-block: var(--s-3);
+  }
+  .topnav a:not(.btn):hover { text-decoration: underline; text-underline-offset: 4px; }
+  .btn-bar { padding: 6px 16px; font-size: 0.9375rem; }
+
+  @media (max-width: 479px) {
+    .brand-name { display: none; }
+  }
+</style>

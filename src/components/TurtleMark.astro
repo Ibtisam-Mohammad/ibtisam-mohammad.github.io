@@ -1,0 +1,42 @@
+---
+// The turtle identity mark — top-down, geometric, faceless (plan.md §3).
+// Shell circle + five plate seams, Logo-arrowhead head, four stub feet, short tail.
+// Phase 1: empty outline (the turtle starts unpainted; plates fill across the site in later phases).
+interface Props {
+  size?: number;
+  title?: string;
+}
+const { size = 24, title } = Astro.props;
+---
+<svg
+  width={size}
+  height={size}
+  viewBox="0 0 32 32"
+  fill="none"
+  stroke="currentColor"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  role={title ? 'img' : undefined}
+  aria-hidden={title ? undefined : 'true'}
+>
+  {title && <title>{title}</title>}
+  <!-- tail -->
+  <path d="M6 16 L2.8 16" stroke-width="2.2" />
+  <!-- feet: four stubs at the diagonals -->
+  <path d="M19.8 21.3 L22.28 23.78" stroke-width="2.2" />
+  <path d="M9.2 21.3 L6.72 23.78" stroke-width="2.2" />
+  <path d="M9.2 10.7 L6.72 8.22" stroke-width="2.2" />
+  <path d="M19.8 10.7 L22.28 8.22" stroke-width="2.2" />
+  <!-- head: the Logo arrowhead nod -->
+  <path d="M23.2 12.6 L29.4 16 L23.2 19.4 Z" stroke-width="2" />
+  <!-- shell -->
+  <circle cx="14.5" cy="16" r="8.5" stroke-width="2" />
+  <!-- five plate seams (unfilled in Phase 1) -->
+  <g stroke-width="1.3" opacity="0.85">
+    <path d="M14.5 16 L21.38 11" />
+    <path d="M14.5 16 L21.38 21" />
+    <path d="M14.5 16 L11.87 24.08" />
+    <path d="M14.5 16 L6 16" />
+    <path d="M14.5 16 L11.87 7.92" />
+  </g>
+</svg>
