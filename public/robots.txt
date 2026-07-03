@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# PLACEHOLDER: update the host when [SITE_URL] is real
+Sitemap: https://example.com/sitemap-index.xml

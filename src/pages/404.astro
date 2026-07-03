@@ -1,0 +1,49 @@
+---
+// 404 (plan.md §15 Phase 5): the turtle, pen up, off the path.
+import Base from '../layouts/Base.astro';
+import TurtleMark from '../components/TurtleMark.astro';
+---
+<Base title="404 — off the path" description="Page not found.">
+  <section class="section lost" style="--accent: var(--cobalt)">
+    <div class="container">
+      <svg class="lost-trail" viewBox="0 0 420 120" aria-hidden="true">
+        <path
+          d="M 8 96 C 80 88, 120 40, 180 52 C 230 62, 240 100, 300 92 C 340 86, 356 60, 372 44"
+          fill="none"
+          stroke="var(--ink-soft)"
+          stroke-width="1.75"
+          stroke-dasharray="6 8"
+          stroke-linecap="round"
+        />
+      </svg>
+      <div class="lost-turtle"><TurtleMark size={44} /></div>
+      <h1>Looks like I wandered off the path.</h1>
+      <p class="lede">There is no page here — but the trail home is well marked.</p>
+      <div class="lost-actions">
+        <a class="btn btn-primary" href="/">Back to the start</a>
+      </div>
+      <p class="mono muted lost-note">404 · pen up</p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .lost {
+    min-height: calc(88svh - 64px);
+    display: grid;
+    align-items: center;
+  }
+  .lost-trail {
+    width: min(420px, 80%);
+    height: auto;
+    overflow: visible;
+  }
+  .lost-turtle {
+    margin: -34px 0 var(--s-6) min(352px, 66%);
+    color: var(--ink);
+  }
+  .lost h1 { font-size: var(--step-4); max-width: 20ch; }
+  .lost .lede { margin-top: var(--s-4); }
+  .lost-actions { margin-top: var(--s-6); }
+  .lost-note { margin-top: var(--s-6); }
+</style>

@@ -4,18 +4,32 @@ A scroll-driven, turtle-graphics portfolio for an AI/ML engineer with a physics 
 
 **Thesis, stated and embodied:** "AI systems, drawn from first principles." A geometric turtle travels down the page as you scroll, drawing the site's diagrams in ink while the page gradually becomes a painting. The whole story is a pure function of scroll position.
 
-## Status
+## Status — all phases complete
 
 | Phase | Scope | State |
 |---|---|---|
-| 0 — Plan | Design doc, tokens, wireframe, self-critique | ✅ done ([DESIGN.md](DESIGN.md)) |
-| 1 — Skeleton | Nine sections, real layout/type/nav, zero animation | ✅ done — Lighthouse (mobile emulation): **Accessibility 100**, Performance 98, Best Practices 100, SEO 100; CLS 0.001; **0 KB JavaScript** |
-| 2 — Vertical slice | Hero + GenAI fully animated (scroll engine, paint, image reveal) | ✅ built, awaiting owner approval — engine + turtle + scenes = 7.5 KB JS (~3 KB gzip); no-JS and reduced-motion states verified by screenshot |
-| 3 — Replicate | All sections wired, turtle path end to end, shell plates, signature | pending |
-| 4 — Perf & a11y pass | §13 budgets measured and reported, reduced-motion / no-JS verified | pending |
-| 5 — Finish | Favicon (painted), OG image, 404, content polish, README final | pending |
+| 0 — Plan | Design doc, tokens, wireframe, self-critique | ✅ ([DESIGN.md](DESIGN.md)) |
+| 1 — Skeleton | Nine sections, real layout/type/nav, zero animation | ✅ |
+| 2 — Vertical slice | Hero + GenAI animated; owner-directed additions (vine, ink-write, blink) | ✅ |
+| 3 — Replicate | All seven remaining scenes, signature, pen states end to end | ✅ |
+| 4 — Perf & a11y | Budgets measured (below), no-JS / reduced-motion verified by screenshot | ✅ |
+| 5 — Finish | Painted favicon, OG image, 404, sitemap/robots/caching headers | ✅ |
 
-Known budget flag for Phase 4: self-hosted fonts are 132.9 KB and the KaTeX faces the page actually loads add roughly 60 KB, so fonts currently exceed the 160 KB cap. Fix is glyph-level subsetting (`pyftsubset`) of both families and trimming KaTeX to the faces in use.
+## Measured numbers (§13/§16, Lighthouse mobile emulation on the built site)
+
+- **Performance 97 · Accessibility 100 · Best Practices 100 · SEO 100**
+- LCP **2.34 s** (< 2.5 budget) · CLS **0.001** (< 0.1) · TBT **0 ms** (< 200 INP proxy)
+- Scroll frames during a full sweep: **max 8 ms, avg 6.9 ms** (< 50 ms budget), vine at full density
+- Boot main-thread work: 171 ms (was 887 ms before math-sampled path geometry)
+- JS **21.4 KB raw / 8.2 KB gzip** (≤ 130 KB budget) — the entire engine, turtle, vine, and scenes
+- Fonts on the wire: our six loaded subsets 100.3 KB + KaTeX's four faces 53.6 KB = **153.9 KB** (≤ 160). The italic face (18.4 KB) loads only if italic text is added — that would exceed the cap by ~12 KB; trim elsewhere if you introduce italics.
+- HTML 27 KB gzip · hero wire weight ≈ 86 KB before below-fold lazy images
+- Textures ≤ 56 KB each (≤ 60); noise→structure sequence 206 KB total, lazy
+- Cross-browser: verified in headless Chromium (desktop + mobile emulation). **Firefox, Safari, iOS Safari, and Android Chrome on real hardware remain an owner task** (§16) — the animation stack is standards-only (rAF, dasharray, IntersectionObserver), so no known risks.
+
+## Deploy
+
+Any static host. `dist/` is the site. Netlify reads [public/_headers](public/_headers) for caching (translate for Vercel/Pages). Before launch: set the real URL in `astro.config.mjs` + `public/robots.txt`, replace the placeholder table below, rerun `python scripts/make-og.py`, and rebuild.
 
 ## Run it
 
@@ -72,5 +86,7 @@ Everything below is deliberately fake or bracketed. Nothing here should survive 
 | `[EMAIL]`, `[GITHUB_URL]`, `[LINKEDIN_URL]`, `[SCHOLAR_URL]`, `[City] · [Timezone]` | `src/sections/Contact.astro` | Real contact links (become live buttons when supplied) |
 | `public/resume.pdf` | one-page stub PDF | The real résumé PDF |
 | Headshot | not yet placed | Optional — receives the contour-first reveal (§8) if supplied |
-| `SIGNATURE_SVG` | not yet placed | Optional — otherwise a single-stroke signature is generated from the owner's name (Phase 3) |
-| OG image + painted favicon | `public/favicon.svg` is the unpainted mark | Painted-turtle versions land in Phase 5 |
+| Signature | `src/sections/Contact.astro` (generated single-stroke placeholder) | Optional `SIGNATURE_SVG` — swap the two paths + dot inside `.signature` |
+| CV + case-study imagery | `public/img/cv-*.webp`, `shot-*.webp` (stylized fakes from `scripts/`) | Real project frames/screenshots (keep the dimensions; update box coords in `Vision.astro`) |
+| `[SITE_URL]` | `astro.config.mjs`, `public/robots.txt` | Production URL (then rebuild for sitemap/canonical/OG URLs) |
+| OG image | `public/og.png` (carries `[Owner Name]`) | Rerun `python scripts/make-og.py` after renaming |

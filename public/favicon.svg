@@ -1,13 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- Phase 1 favicon: unpainted turtle mark on paper. Phase 5 replaces with the fully painted turtle (plan.md §3). -->
+  <!-- The fully painted turtle (plan.md §3 finale): all five plates lit. -->
   <rect width="32" height="32" rx="7" fill="#FCF8EF"/>
+  <g>
+    <path d="M14.5 16 L21 11.3 A8 8 0 0 1 21 20.7 Z" fill="#2B59C3"/>
+    <path d="M14.5 16 L21 20.7 A8 8 0 0 1 12.03 23.6 Z" fill="#0E8A78"/>
+    <path d="M14.5 16 L12.03 23.6 A8 8 0 0 1 6.5 16 Z" fill="#4E9B35"/>
+    <path d="M14.5 16 L6.5 16 A8 8 0 0 1 12.03 8.4 Z" fill="#7A4FD6"/>
+    <path d="M14.5 16 L12.03 8.4 A8 8 0 0 1 21 11.3 Z" fill="#E0731D"/>
+  </g>
   <g fill="none" stroke="#262219" stroke-linecap="round" stroke-linejoin="round">
     <path d="M6.5 16 L3.8 16" stroke-width="2.2"/>
     <path d="M19.6 21.1 L21.8 23.3" stroke-width="2.2"/>
     <path d="M9.4 21.1 L7.2 23.3" stroke-width="2.2"/>
     <path d="M9.4 10.9 L7.2 8.7" stroke-width="2.2"/>
     <path d="M19.6 10.9 L21.8 8.7" stroke-width="2.2"/>
-    <path d="M22.7 13 L28.2 16 L22.7 19 Z" stroke-width="2"/>
+    <path d="M22.7 13 L28.2 16 L22.7 19 Z" stroke-width="2" fill="#FCF8EF"/>
     <circle cx="14.5" cy="16" r="8" stroke-width="2"/>
     <g stroke-width="1.2" opacity="0.85">
       <path d="M14.5 16 L20.97 11.3"/>
