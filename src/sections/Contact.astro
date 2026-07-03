@@ -1,0 +1,50 @@
+---
+// §10.9 — Contact & résumé, SIGNATURE 4 of 4. Phase 1: actions and layout.
+// The painted turtle and drawn signature arrive in Phase 3.
+import SectionHeader from '../components/SectionHeader.astro';
+---
+<section id="contact" class="section" style="--accent: var(--ink-soft)" aria-labelledby="contact-title">
+  <div class="container">
+    <SectionHeader
+      num="09"
+      title="Contact"
+      headingId="contact-title"
+      glyphId="contact"
+      lede="I like problems where the math has to be right and the system has to ship. If you have one, I would like to hear about it."
+    />
+    <div class="contact-actions">
+      <a class="btn btn-primary" href="/resume.pdf" download>Download résumé</a>
+      <p class="mono muted">PDF · one page</p>
+    </div>
+    <!-- PLACEHOLDER: real contact links from the owner -->
+    <ul class="contact-links" role="list">
+      <li class="mono"><span class="muted">Email&nbsp;&nbsp;·</span> [EMAIL]</li>
+      <li class="mono"><span class="muted">GitHub&nbsp;&nbsp;·</span> [GITHUB_URL]</li>
+      <li class="mono"><span class="muted">LinkedIn&nbsp;&nbsp;·</span> [LINKEDIN_URL]</li>
+      <li class="mono"><span class="muted">Scholar&nbsp;&nbsp;·</span> [SCHOLAR_URL]</li>
+    </ul>
+    <p class="mono muted location">[City] · [Timezone]</p>
+  </div>
+</section>
+
+<style>
+  /* settled full palette (plan.md §7 arc) */
+  #contact :global(.kicker-dot) {
+    width: 34px;
+    background: linear-gradient(90deg, var(--cobalt), var(--teal), var(--leaf), var(--violet), var(--ember));
+  }
+  .contact-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--s-4);
+    margin-block: var(--s-6);
+  }
+  .contact-links {
+    display: grid;
+    gap: var(--s-3);
+    padding: 0;
+    list-style: none;
+  }
+  .location { margin-top: var(--s-6); }
+</style>

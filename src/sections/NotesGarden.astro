@@ -1,0 +1,65 @@
+---
+// §10.8 — Notes / research garden. Phase 1: the list. The turtle-drawn notes graph
+// (7–9 nodes, hover/keyboard-linked to these rows) arrives in Phase 3.
+import SectionHeader from '../components/SectionHeader.astro';
+
+// PLACEHOLDER note titles — replace with the owner's real notes
+const notes = [
+  { title: 'Attention as kernel regression', date: 'Mar 2026', datetime: '2026-03', tags: [{ t: 'theory', a: 'cobalt' }, { t: 'transformers', a: 'teal' }] },
+  { title: 'What the SVD knows about your embeddings', date: 'Jan 2026', datetime: '2026-01', tags: [{ t: 'linear algebra', a: 'cobalt' }] },
+  { title: 'Calibration before confidence', date: 'Nov 2025', datetime: '2025-11', tags: [{ t: 'probability', a: 'cobalt' }, { t: 'evals', a: 'violet' }] },
+  { title: 'The learning rate is a physical quantity', date: 'Sep 2025', datetime: '2025-09', tags: [{ t: 'optimization', a: 'cobalt' }] },
+  { title: 'Segment anything, measure something', date: 'Jun 2025', datetime: '2025-06', tags: [{ t: 'vision', a: 'leaf' }] },
+  { title: 'Drift is a distribution, not an alarm', date: 'Apr 2025', datetime: '2025-04', tags: [{ t: 'mlops', a: 'ember' }] },
+];
+---
+<section id="notes" class="section" style="--accent: var(--violet)" aria-labelledby="notes-title">
+  <div class="container">
+    <SectionHeader
+      num="08"
+      title="Notes"
+      headingId="notes-title"
+      glyphId="notes"
+      lede="Working notes on the math behind the models — short, specific, and kept honest."
+    />
+    <ol class="notes-list" role="list">
+      {notes.map((n) => (
+        <li class="note">
+          <time class="mono muted" datetime={n.datetime}>{n.date}</time>
+          <span class="note-title">{n.title}</span>
+          <ul class="chip-row note-tags" role="list">
+            {n.tags.map((tag) => (
+              <li class="chip" style={`--accent: var(--${tag.a})`}>{tag.t}</li>
+            ))}
+          </ul>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .notes-list {
+    list-style: none;
+    padding: 0;
+    margin-top: var(--s-5);
+  }
+  .note {
+    display: grid;
+    grid-template-columns: 96px 1fr auto;
+    gap: var(--s-2) var(--s-5);
+    align-items: baseline;
+    padding-block: var(--s-4);
+  }
+  .note + .note { border-top: 1px solid var(--line-soft); }
+  .note-title {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: var(--step-0);
+  }
+  @media (max-width: 719px) {
+    .note { grid-template-columns: 1fr; }
+    .note time { order: 2; }
+    .note-tags { order: 3; }
+  }
+</style>

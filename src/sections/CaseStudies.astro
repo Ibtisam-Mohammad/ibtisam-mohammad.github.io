@@ -1,0 +1,114 @@
+---
+// §10.7 — Selected case studies: the 30-second recruiter skim zone.
+// Strict template: Problem → Approach → Result → stack → link. Taped-frame reveals arrive in Phase 3.
+import SectionHeader from '../components/SectionHeader.astro';
+
+// PLACEHOLDER case studies — realistic but fake; figures are illustrative, not claims
+const cases = [
+  {
+    name: 'Defect detection at line speed',
+    problem: 'Manual inspection missed micro-defects at 2 m/s belt speed; slowing the line cost more than the defects did.',
+    approach: 'Anchor-free detector distilled to run on line-side hardware. Hard-negative mining against six months of logged false alarms. Recall tuned against a fixed false-positive budget.',
+    result: 'Critical-defect recall up 31 points at the same false-positive rate.',
+    resultChips: ['+31 pts recall', 'same FP rate'],
+    stack: ['PyTorch', 'TensorRT', 'OpenCV', 'Grafana'],
+  },
+  {
+    name: 'Grounded assistant for support teams',
+    problem: 'Support answers lived in 4,000 pages of versioned docs; agents averaged eight minutes per lookup.',
+    approach: 'Retrieval with citation-required generation. Nightly evals on a frozen question set. A refusal path for thin evidence, so wrong-but-confident answers never ship.',
+    result: 'Median lookup time down from eight minutes to 40 seconds, every answer citing its source.',
+    resultChips: ['8 min → 40 s', 'cited answers'],
+    stack: ['Python', 'pgvector', 'FastAPI', 'LLM API'],
+  },
+  {
+    name: 'Forecast platform, re-platformed',
+    problem: 'Twelve business-critical forecasts ran as un-versioned notebooks on a single VM.',
+    approach: 'Containerized pipelines with a model registry, backtesting gates in CI, and automatic rollback on drift. Owners kept their notebooks for research; production got a contract.',
+    result: 'Retrain cadence moved from quarterly to weekly; zero manual deploys in the last two quarters.',
+    resultChips: ['quarterly → weekly', '0 manual deploys'],
+    stack: ['Docker', 'MLflow', 'Prefect', 'Postgres'],
+  },
+];
+---
+<section id="work" class="section" style="--accent: var(--ink-soft)" aria-labelledby="work-title">
+  <div class="container">
+    <SectionHeader
+      num="07"
+      title="Selected case studies"
+      headingId="work-title"
+      glyphId="work"
+      lede="Problem, approach, result — with the metric up front."
+    />
+    <div class="case-list">
+      {cases.map((c) => (
+        <article class="card cs-card">
+          <header class="cs-head">
+            <h3>{c.name}</h3>
+            <span class="placeholder-tag">placeholder</span>
+          </header>
+          <dl class="cs-rows">
+            <div class="cs-row">
+              <dt class="mono muted">Problem</dt>
+              <dd>{c.problem}</dd>
+            </div>
+            <div class="cs-row">
+              <dt class="mono muted">Approach</dt>
+              <dd>{c.approach}</dd>
+            </div>
+            <div class="cs-row">
+              <dt class="mono muted">Result</dt>
+              <dd>
+                <p class="cs-result">{c.result}</p>
+                <ul class="chip-row" role="list">
+                  {c.resultChips.map((r) => <li class="chip">{r}</li>)}
+                </ul>
+              </dd>
+            </div>
+            <div class="cs-row">
+              <dt class="mono muted">Stack</dt>
+              <dd>
+                <ul class="chip-row" role="list">
+                  {c.stack.map((s) => <li class="chip cs-stack-chip">{s}</li>)}
+                </ul>
+              </dd>
+            </div>
+          </dl>
+          <p class="mono muted cs-link">full write-up — [CASE_STUDY_URL]</p>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  /* full palette, structured, calm: the kicker dot becomes the collected-palette strip */
+  #work :global(.kicker-dot) {
+    width: 34px;
+    background: linear-gradient(90deg, var(--cobalt), var(--teal), var(--leaf), var(--violet), var(--ember));
+  }
+  .case-list { display: grid; gap: var(--s-5); }
+  .cs-card { padding: var(--s-6); }
+  .cs-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s-4);
+    margin-bottom: var(--s-5);
+  }
+  .cs-rows { display: grid; gap: var(--s-4); margin: 0; }
+  .cs-row {
+    display: grid;
+    grid-template-columns: 104px 1fr;
+    gap: var(--s-2) var(--s-5);
+    align-items: baseline;
+  }
+  .cs-row dt { letter-spacing: 0.08em; }
+  .cs-row dd { margin: 0; }
+  .cs-result { font-weight: 600; margin-bottom: var(--s-2); }
+  .cs-result::first-line { font-weight: 600; }
+  .cs-link { margin-top: var(--s-5); }
+  @media (max-width: 719px) {
+    .cs-row { grid-template-columns: 1fr; }
+  }
+</style>

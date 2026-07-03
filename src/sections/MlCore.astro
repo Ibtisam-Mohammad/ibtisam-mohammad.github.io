@@ -1,0 +1,61 @@
+---
+// §10.3 — AI / ML expertise: short narrative + grouped skill chips.
+// Turtle drawings (feed-forward net, decision boundary, embedding hulls) arrive in Phase 3.
+import SectionHeader from '../components/SectionHeader.astro';
+
+// PLACEHOLDER: adjust skill groups to the owner's real toolkit
+const groups = [
+  {
+    name: 'Learning theory',
+    skills: ['generalization', 'bias–variance', 'kernel methods', 'information theory', 'causal inference'],
+  },
+  {
+    name: 'Deep learning',
+    skills: ['transformers', 'attention', 'convnets', 'sequence models', 'self-supervision', 'diffusion'],
+  },
+  {
+    name: 'Tooling',
+    skills: ['PyTorch', 'JAX', 'scikit-learn', 'Hugging Face', 'Optuna', 'Weights & Biases'],
+  },
+];
+---
+<section id="ml" class="section" style="--accent: var(--teal)" aria-labelledby="ml-title">
+  <div class="container">
+    <SectionHeader
+      num="03"
+      title="AI &amp; machine learning"
+      headingId="ml-title"
+      glyphId="ml"
+      lede="The full stack of learning: why a method generalizes, how to make it train, and what it costs to run."
+    />
+    <div class="prose">
+      <p>
+        Theory earns its keep here — it is how you debug a model you cannot print. I reach
+        for the bound before the bigger GPU, and for the ablation before the anecdote.
+      </p>
+    </div>
+    <div class="groups">
+      {groups.map((g) => (
+        <div class="group">
+          <h3>{g.name}</h3>
+          <ul class="chip-row" role="list">
+            {g.skills.map((s) => <li class="chip">{s}</li>)}
+          </ul>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .groups {
+    margin-top: var(--s-7);
+    display: grid;
+    gap: var(--s-6);
+  }
+  .group h3 {
+    font-size: 1.0625rem;
+    font-weight: 500;
+    margin-bottom: var(--s-3);
+  }
+</style>

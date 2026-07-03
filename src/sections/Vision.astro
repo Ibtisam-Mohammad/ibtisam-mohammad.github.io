@@ -1,0 +1,62 @@
+---
+// §10.4 — Computer vision, SIGNATURE 2 of 4. Phase 1: mini-cards + reserved lead visual.
+// The bounding-box image reveal and pose skeleton arrive in Phase 3.
+import SectionHeader from '../components/SectionHeader.astro';
+
+// PLACEHOLDER projects — realistic but fake; replace with the owner's real work
+const projects = [
+  {
+    name: 'Line-speed defect detection',
+    line: 'Micro-defect detection on a moving production line, tuned for recall at a fixed false-positive budget.',
+    chips: ['detection', 'edge deployment'],
+  },
+  {
+    name: 'Pose for physiotherapy',
+    line: 'Keypoint tracking that survives loose clothing and home lighting, with clinician-readable reports.',
+    chips: ['pose estimation', 'on-device'],
+  },
+  {
+    name: 'Single-camera shelf analytics',
+    line: 'Planogram compliance and stock-out detection from one fixed camera per aisle.',
+    chips: ['segmentation', 'tracking'],
+  },
+];
+---
+<section id="vision" class="section" style="--accent: var(--leaf)" aria-labelledby="vision-title">
+  <div class="container">
+    <SectionHeader
+      num="04"
+      title="Computer vision"
+      headingId="vision-title"
+      glyphId="vision"
+      lede="Systems that measure the physical world through cameras — built for real lighting, real occlusion, and real deadlines."
+    />
+    <figure class="lead-visual">
+      <div class="visual-placeholder" style="aspect-ratio: 3 / 2;">
+        <p class="mono">lead visual — the bounding-box reveal lands here in Phase 3</p>
+      </div>
+      <figcaption class="mono muted">Detection output on a live line. <span class="placeholder-tag">placeholder</span></figcaption>
+    </figure>
+    <ul class="cols-3 project-grid" role="list">
+      {projects.map((p) => (
+        <li class="card">
+          <h3>{p.name}</h3>
+          <p class="proj-line">{p.line}</p>
+          <ul class="chip-row" role="list">
+            {p.chips.map((c) => <li class="chip">{c}</li>)}
+          </ul>
+          <p><span class="placeholder-tag">placeholder</span></p>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .lead-visual { margin-block: var(--s-6); }
+  .lead-visual figcaption { margin-top: var(--s-3); }
+  .project-grid { margin-top: var(--s-6); padding: 0; list-style: none; }
+  .card h3 { margin-bottom: var(--s-3); }
+  .proj-line { margin-bottom: var(--s-4); }
+  .card .chip-row { margin-bottom: var(--s-4); }
+</style>
