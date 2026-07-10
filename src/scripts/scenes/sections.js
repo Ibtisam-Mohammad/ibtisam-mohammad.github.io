@@ -29,7 +29,7 @@ function registerSectionWaypoints() {
       { x: r.left + r.width * 0.86, y: r.top + r.height * 0.2, pen: 'down', visible: true },
       { x: r.left + r.width * 0.66, y: r.top + r.height * 0.43, pen: 'down', visible: true },
       { x: r.left + r.width * 0.5, y: r.top + r.height * 0.58, pen: 'down', visible: true },
-      { x: r.left - 18, y: r.top + r.height + 18, pen: 'up', visible: false },
+      { x: r.left - 18, y: r.top + r.height + 18, pen: 'up', visible: true },
     ], r.top - vh * 0.95, r.top - vh * 0.45);
   });
 
@@ -39,7 +39,7 @@ function registerSectionWaypoints() {
       { x: r.left + r.width * 0.65, y: r.top + r.height * 0.24, pen: 'down', visible: true },
       { x: r.left + r.width * 0.52, y: r.top + r.height * 0.51, pen: 'down', visible: true },
       { x: r.left + r.width * 0.39, y: r.top + r.height * 0.84, pen: 'down', visible: true },
-      { x: r.right + 18, y: r.top + r.height + 18, pen: 'up', visible: false },
+      { x: r.right + 18, y: r.top + r.height + 18, pen: 'up', visible: true },
     ], r.top - vh * 0.95, r.top - vh * 0.4);
   });
 
@@ -55,7 +55,7 @@ function registerSectionWaypoints() {
     }
     return spread([
       ...points.map((point) => ({ ...point, pen: 'down', visible: true })),
-      { x: r.right + 18, y: r.top + r.height + 18, pen: 'up', visible: false },
+      { x: r.right + 18, y: r.top + r.height + 18, pen: 'up', visible: true },
     ], r.top - vh * 0.92, r.top - vh * 0.4);
   });
 
@@ -65,7 +65,7 @@ function registerSectionWaypoints() {
       { x: r.left + 8, y: r.top - 8, pen: 'down', visible: true },
       { x: r.right - 8, y: r.top + 18, pen: 'down', visible: true },
       { x: r.right + 8, y: r.top + r.height * 0.82, pen: 'down', visible: true },
-      { x: r.right + 18, y: r.top + r.height + 22, pen: 'up', visible: false },
+      { x: r.right + 18, y: r.top + r.height + 22, pen: 'up', visible: true },
     ], r.top - vh * 0.9, r.top - vh * 0.55);
   });
 
@@ -77,7 +77,7 @@ function registerSectionWaypoints() {
       { ...at(236, 116), pen: 'down', visible: true },
       { ...at(212, 200), pen: 'down', visible: true },
       { ...at(254, 280), pen: 'down', visible: true },
-      { x: r.left - 18, y: r.top + r.height + 18, pen: 'up', visible: false },
+      { x: r.left - 18, y: r.top + r.height + 18, pen: 'up', visible: true },
     ], r.top - vh * 0.92, r.top - vh * 0.45);
   });
 
@@ -88,7 +88,7 @@ function registerSectionWaypoints() {
       { x: r.left + r.width * 0.4, y: r.top + r.height * 0.48, pen: 'down', visible: true },
       { x: r.left + r.width * 0.72, y: r.top + r.height * 0.56, pen: 'down', visible: true },
       { x: r.left + r.width * 0.94, y: r.top + r.height * 0.68, pen: 'down', visible: true },
-      { x: r.right + 18, y: r.top + r.height + 18, pen: 'up', visible: false },
+      { x: r.right + 18, y: r.top + r.height + 18, pen: 'up', visible: true },
     ], r.top - vh * 0.85, r.top - vh * 0.2);
   });
 }

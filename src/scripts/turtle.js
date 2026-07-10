@@ -56,7 +56,7 @@ function docRect(el) {
 }
 
 function laneX(side, docW, contentRect, mobile) {
-  if (mobile) return docW - 14;
+  if (mobile) return docW - 26;
   if (side === 'L') return Math.max(contentRect.left / 2, 26);
   if (side === 'R') return Math.min((docW + contentRect.right) / 2, docW - 26);
   return docW / 2;
@@ -147,11 +147,11 @@ export function measureTurtle() {
     const r = docRect(section);
     const lane = laneX(side, docW, content, mobile);
 
-    wps.push({ x: lane, y: r.top + 24, pen: 'up', visible: false, viewport: 0.92, boundary: routeIndex > 0, section: id });
+    wps.push({ x: lane, y: r.top + 24, pen: 'up', visible: true, viewport: 0.92, boundary: routeIndex > 0, section: id });
     const extra = state.extraWaypoints[id];
     if (extra) {
       for (const waypoint of extra(r, { mobile, docW, vh })) {
-        const x = mobile ? Math.max(14, Math.min(docW - 14, waypoint.x)) : waypoint.x;
+        const x = mobile ? Math.max(4, Math.min(docW - 26, waypoint.x)) : waypoint.x;
         wps.push({
           ...waypoint,
           x,
@@ -167,7 +167,7 @@ export function measureTurtle() {
       wps.push({ x: lane, y: r.bottom - 104, pen: 'up', visible: true, viewport: 0.58, milestone: true, section: id });
       wps.push({ x: content.left + content.width * 0.38, y: r.bottom - 62, pen: 'up', visible: true, section: id });
     } else {
-      wps.push({ x: lane, y: r.bottom - 28, pen: 'up', visible: false, viewport: 0.58, milestone: true, section: id });
+      wps.push({ x: lane, y: r.bottom - 28, pen: 'up', visible: true, viewport: 0.58, milestone: true, section: id });
     }
   });
 
@@ -271,7 +271,17 @@ export function updateTurtle(y, dt = 1 / 60) {
   const penDown = waypoint.pen === 'down';
   const visible = waypoint.visible !== false;
 
-  state.turtle.style.transform = `translate(${pt.x.toFixed(1)}px, ${pt.y.toFixed(1)}px) rotate(${deg.toFixed(1)}deg)`;
+  // Keep the rendered body in view when distant waypoints, resizing, or fast scrolling
+  // would otherwise place the authored route just outside the viewport.
+  const mobile = document.documentElement.clientWidth < 720;
+  const safeSize = mobile ? 38 : 50;
+  const headerBottom = document.querySelector('.topbar')?.getBoundingClientRect().bottom || 64;
+  const safeX = Math.max(8, Math.min(document.documentElement.clientWidth - safeSize, pt.x));
+  const safeY = Math.max(
+    y + headerBottom + 8,
+    Math.min(y + window.innerHeight - safeSize, pt.y)
+  );
+  state.turtle.style.transform = `translate(${safeX.toFixed(1)}px, ${safeY.toFixed(1)}px) rotate(${deg.toFixed(1)}deg)`;
   state.turtle.classList.toggle('is-visible', visible);
 
   const speed = Math.min(Math.abs(state.velocity) / 900, 1);
@@ -321,6 +331,7 @@ export function initTurtle() {
   state.pen = document.getElementById('turtle-pen');
   state.feet = [...state.turtle.querySelectorAll('.turtle-foot')];
   state.plates = [...state.turtle.querySelectorAll('[data-plate]')];
+  state.turtle.classList.add('is-visible');
   measureTurtle();
   ranges = plateRanges();
   return true;

@@ -41,7 +41,7 @@ export function initGenAiScene() {
       { x: r.left + 12, y: top - 10, pen: 'down', visible: true },
       { x: r.right - 18, y: top + 22, pen: 'down', visible: true },
       { x: r.right + 18, y: top + r.height * 0.72, pen: 'down', visible: true },
-      { x: r.right + 22, y: top + r.height + 22, pen: 'up', visible: false },
+      { x: r.right + 22, y: top + r.height + 22, pen: 'up', visible: true },
     ];
     const start = top - vh * 0.8;
     const end = top + r.height - vh * 0.35;

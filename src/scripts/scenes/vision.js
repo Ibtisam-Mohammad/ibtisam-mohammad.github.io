@@ -39,7 +39,7 @@ export function initVisionScene() {
       { ...at(596, 352), pen: 'down', visible: true },
       { ...at(596, 524), pen: 'down', visible: true },
       { ...at(810, 530), pen: 'down', visible: true },
-      { x: r.left - 20, y: top + r.height + 20, pen: 'up', visible: false },
+      { x: r.left - 20, y: top + r.height + 20, pen: 'up', visible: true },
     ];
     const start = top - vh * 0.95;
     const end = top - vh * 0.25;
