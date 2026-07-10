@@ -13,10 +13,12 @@ import TurtleMark from './TurtleMark.astro';
     <nav aria-label="Site">
       <ul class="topnav">
         <li><a href="#work">Work</a></li>
-        <li><a href="#notes">Notes</a></li>
+        <li class="nav-notes"><a href="#notes">Notes</a></li>
         <li><a href="#contact">Contact</a></li>
         <li>
-          <a class="btn btn-primary btn-bar" href="/resume.pdf" download>Résumé</a>
+          <a class="btn btn-primary btn-bar" href="/resume.pdf" download aria-label="Download résumé">
+            <span class="resume-long">Résumé</span><span class="resume-short" aria-hidden="true">CV</span>
+          </a>
         </li>
       </ul>
     </nav>
@@ -61,6 +63,9 @@ import TurtleMark from './TurtleMark.astro';
     text-decoration: none;
     color: var(--ink);
     padding-block: var(--s-2);
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
   }
   .brand-name {
     font-family: var(--font-display);
@@ -75,6 +80,11 @@ import TurtleMark from './TurtleMark.astro';
     padding: 0;
   }
   .topnav a:not(.btn) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
     font-family: var(--font-display);
     font-weight: 500;
     font-size: 0.9375rem;
@@ -84,8 +94,17 @@ import TurtleMark from './TurtleMark.astro';
   }
   .topnav a:not(.btn):hover { text-decoration: underline; text-underline-offset: 4px; }
   .btn-bar { padding: 6px 16px; font-size: 0.9375rem; }
+  .resume-short { display: none; }
 
   @media (max-width: 479px) {
     .brand-name { display: none; }
+    .topbar-inner { gap: var(--s-2); }
+    .topnav { gap: var(--s-1); }
+    .nav-notes { display: none; }
+  }
+  @media (max-width: 359px) {
+    .resume-long { display: none; }
+    .resume-short { display: inline; }
+    .btn-bar { min-width: 48px; padding-inline: 12px; }
   }
 </style>

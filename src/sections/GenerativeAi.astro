@@ -85,6 +85,28 @@ const scribbles = [scribble(790, 130), scribble(860, 240), scribble(730, 200)];
         <img class="gen-step gen-step-1" src="/img/gen-step-1.webp" alt="" width="1280" height="800" loading="lazy" decoding="async" />
         <img class="gen-step gen-step-2" src="/img/gen-step-2.webp" alt="" width="1280" height="800" loading="lazy" decoding="async" />
         <img class="gen-step gen-step-3" src="/img/gen-step-3.webp" alt="" width="1280" height="800" loading="lazy" decoding="async" />
+        <div class="gen-conditioning" aria-hidden="true">
+          <span class="conditioning-item">
+            <svg viewBox="0 0 36 44">
+              <circle cx="18" cy="6" r="3" />
+              <path d="M18 10 V24 M18 14 L9 21 M18 14 L27 21 M18 24 L11 38 M18 24 L25 38" />
+            </svg>
+            <span>pose</span>
+          </span>
+          <span class="conditioning-plus">+</span>
+          <span class="conditioning-item">
+            <svg viewBox="0 0 44 44">
+              <path class="garment-mask" d="M14 7 L20 4 H24 L30 7 L39 14 L34 21 L30 18 V39 H14 V18 L10 21 L5 14 Z" />
+            </svg>
+            <span>garment mask</span>
+          </span>
+        </div>
+        <ol class="gen-stages" aria-label="Virtual try-on generation stages">
+          <li class="gen-stage" data-stage="0"><span>01</span><strong>noise</strong></li>
+          <li class="gen-stage" data-stage="1"><span>02</span><strong>pose + mask</strong></li>
+          <li class="gen-stage" data-stage="2"><span>03</span><strong>guide</strong></li>
+          <li class="gen-stage is-active" data-stage="3"><span>04</span><strong>output</strong></li>
+        </ol>
         <img class="gen-step gen-step-4" src="/img/gen-step-4.webp" alt="Abstract generated landscape of layered violet and rose ridges under a pale sky — placeholder for a real generative project output" width="1280" height="800" loading="lazy" decoding="async" />
         <!-- no vector-effect here: non-scaling-stroke makes Chrome measure dashes in
              screen space while getTotalLength() is user space — the mismatch leaks
@@ -95,7 +117,7 @@ const scribbles = [scribble(790, 130), scribble(860, 240), scribble(730, 200)];
           <path data-part="frame" data-draw d={frameD} class="gen-frame-path" />
         </svg>
       </div>
-      <figcaption class="mono muted">Noise → structure: four pre-rendered denoising steps, scrubbed by scroll. <span class="placeholder-tag">abstract stand-in — client generations stay private</span></figcaption>
+      <figcaption class="mono muted">Private-safe try-on pipeline: latent noise → pose and garment mask → conditioned generation → output. <span class="placeholder-tag">client generations stay private</span></figcaption>
     </figure>
 
     <!-- diffusion-trajectory doodle: dots converging along a curve (margin annotation) -->
@@ -126,7 +148,7 @@ const scribbles = [scribble(790, 130), scribble(860, 240), scribble(730, 200)];
 </section>
 
 <style>
-  .genai { position: relative; }
+  .genai { position: relative; overflow: clip; }
   .genai .container { position: relative; z-index: 1; }
 
   .gen-figure-wrap { margin-block: var(--s-6); }
@@ -146,6 +168,79 @@ const scribbles = [scribble(790, 130), scribble(860, 240), scribble(730, 200)];
     opacity: 0;
   }
   .gen-step-4 { opacity: 1; } /* finished state: the resolved image */
+  .gen-conditioning {
+    position: absolute;
+    z-index: 2;
+    top: var(--s-4);
+    right: var(--s-4);
+    display: flex;
+    align-items: center;
+    gap: var(--s-3);
+    padding: 9px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--scrim);
+  }
+  .conditioning-item {
+    display: grid;
+    grid-template-columns: 36px auto;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    color: var(--ink);
+  }
+  .conditioning-item svg { width: 32px; height: 36px; overflow: visible; }
+  .conditioning-item svg circle,
+  .conditioning-item svg path {
+    fill: none;
+    stroke: var(--violet);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .conditioning-item .garment-mask {
+    fill: color-mix(in srgb, var(--rose-wash) 26%, var(--paper));
+    stroke: var(--rose-wash);
+  }
+  .conditioning-plus { font-family: var(--font-mono); color: var(--ink-soft); }
+  .gen-stages {
+    position: absolute;
+    z-index: 2;
+    left: var(--s-4);
+    right: var(--s-4);
+    bottom: var(--s-4);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    padding: 0;
+    list-style: none;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--scrim);
+  }
+  .gen-stage {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+    padding: 9px 12px;
+    opacity: 0.58;
+    transition: opacity var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease);
+  }
+  .gen-stage + .gen-stage { border-left: 1px solid var(--line); }
+  .gen-stage span,
+  .gen-stage strong {
+    overflow-wrap: anywhere;
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    line-height: 1.25;
+  }
+  .gen-stage span { color: var(--ink-soft); }
+  .gen-stage strong { font-weight: 500; }
+  .gen-stage.is-active {
+    opacity: 1;
+    background: color-mix(in srgb, var(--violet) 12%, var(--paper));
+  }
   .gen-frame {
     position: absolute;
     inset: -12px;
@@ -193,5 +288,14 @@ const scribbles = [scribble(790, 130), scribble(860, 240), scribble(730, 200)];
   @media (max-width: 719px) {
     /* mobile wash density ~60%: drop the large field wash */
     .genai .wash:nth-of-type(3) { display: none; }
+    .gen-conditioning {
+      top: var(--s-3);
+      right: var(--s-3);
+      transform: scale(0.82);
+      transform-origin: top right;
+    }
+    .gen-stages { left: var(--s-2); right: var(--s-2); bottom: var(--s-2); }
+    .gen-stage { padding: 6px; }
+    .gen-stage span { display: none; }
   }
 </style>

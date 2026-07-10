@@ -11,30 +11,42 @@
   </svg>
 </div>
 <div id="turtle-layer" aria-hidden="true">
-  <svg id="turtle" viewBox="-13.5 -10.5 30 21" width="34" height="23.8">
+  <svg id="turtle" viewBox="-15.5 -11.5 32.5 23" width="36" height="25.5">
     <g id="turtle-inner">
-      <!-- plate sectors (fill as sections are traversed) -->
-      <path data-plate="0" d="M0 0 L6.88 -5 A8.5 8.5 0 0 1 6.88 5 Z" fill="#2B59C3" fill-opacity="0" />
-      <path data-plate="1" d="M0 0 L6.88 5 A8.5 8.5 0 0 1 -2.63 8.08 Z" fill="#0E8A78" fill-opacity="0" />
-      <path data-plate="2" d="M0 0 L-2.63 8.08 A8.5 8.5 0 0 1 -8.5 0 Z" fill="#4E9B35" fill-opacity="0" />
-      <path data-plate="3" d="M0 0 L-8.5 0 A8.5 8.5 0 0 1 -2.63 -8.08 Z" fill="#7A4FD6" fill-opacity="0" />
-      <path data-plate="4" d="M0 0 L-2.63 -8.08 A8.5 8.5 0 0 1 6.88 -5 Z" fill="#E0731D" fill-opacity="0" />
-      <!-- ink line work: tail, feet, head, shell, plate seams. No face. -->
-      <g fill="none" stroke="var(--ink)" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M-8.5 0 L-11.8 0" stroke-width="1.9" />
-        <path d="M4.4 4.4 L6.3 6.3" stroke-width="1.9" />
-        <path d="M-4.4 4.4 L-6.3 6.3" stroke-width="1.9" />
-        <path d="M-4.4 -4.4 L-6.3 -6.3" stroke-width="1.9" />
-        <path d="M4.4 -4.4 L6.3 -6.3" stroke-width="1.9" />
-        <path d="M8.3 -3.9 L15 0 L8.3 3.9 Z" stroke-width="1.7" fill="var(--paper)" />
-        <circle cx="0" cy="0" r="8.5" stroke-width="1.8" fill="none" />
-        <g stroke-width="0.9" opacity="0.55">
-          <path d="M0 0 L6.88 -5" />
-          <path d="M0 0 L6.88 5" />
-          <path d="M0 0 L-2.63 8.08" />
-          <path d="M0 0 L-8.5 0" />
-          <path d="M0 0 L-2.63 -8.08" />
+      <!-- Feet articulate from travelled distance, so the gait reverses with scroll. -->
+      <g id="turtle-feet" fill="none" stroke="var(--ink)" stroke-width="1.9" stroke-linecap="round">
+        <path class="turtle-foot" data-foot="0" d="M4.4 4.4 L6.3 6.3" />
+        <path class="turtle-foot" data-foot="1" d="M-4.4 4.4 L-6.3 6.3" />
+        <path class="turtle-foot" data-foot="2" d="M-4.4 -4.4 L-6.3 -6.3" />
+        <path class="turtle-foot" data-foot="3" d="M4.4 -4.4 L6.3 -6.3" />
+      </g>
+
+      <g id="turtle-body">
+        <!-- Plate sectors fill as the five technical domains are traversed. -->
+        <path data-plate="0" d="M0 0 L6.88 -5 A8.5 8.5 0 0 1 6.88 5 Z" fill="#2B59C3" fill-opacity="0" />
+        <path data-plate="1" d="M0 0 L6.88 5 A8.5 8.5 0 0 1 -2.63 8.08 Z" fill="#0E8A78" fill-opacity="0" />
+        <path data-plate="2" d="M0 0 L-2.63 8.08 A8.5 8.5 0 0 1 -8.5 0 Z" fill="#4E9B35" fill-opacity="0" />
+        <path data-plate="3" d="M0 0 L-8.5 0 A8.5 8.5 0 0 1 -2.63 -8.08 Z" fill="#7A4FD6" fill-opacity="0" />
+        <path data-plate="4" d="M0 0 L-2.63 -8.08 A8.5 8.5 0 0 1 6.88 -5 Z" fill="#E0731D" fill-opacity="0" />
+        <!-- Geometric, faceless line work keeps the mark closer to Logo than a mascot. -->
+        <g fill="none" stroke="var(--ink)" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8.3 -3.9 L15 0 L8.3 3.9 Z" stroke-width="1.7" fill="var(--paper)" />
+          <circle cx="0" cy="0" r="8.5" stroke-width="1.8" fill="none" />
+          <g stroke-width="0.9" opacity="0.55">
+            <path d="M0 0 L6.88 -5" />
+            <path d="M0 0 L6.88 5" />
+            <path d="M0 0 L-2.63 8.08" />
+            <path d="M0 0 L-8.5 0" />
+            <path d="M0 0 L-2.63 -8.08" />
+          </g>
         </g>
+      </g>
+
+      <!-- The pen is visibly attached at the tail; its filled contact dot appears pen-down. -->
+      <g id="turtle-pen" fill="none" stroke="var(--ink)" stroke-linecap="round">
+        <path d="M-8.5 0 L-11.6 0" stroke-width="1.8" />
+        <circle class="pen-ring" cx="-12.6" cy="0" r="1.45" stroke-width="1.2" fill="var(--paper)" />
+        <circle class="pen-contact" cx="-12.6" cy="0" r="1.05" stroke="none" fill="var(--ink)" />
       </g>
     </g>
   </svg>

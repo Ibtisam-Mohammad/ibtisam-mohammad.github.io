@@ -5,6 +5,7 @@
 // (desktop; mobile hides it via CSS). Finished states are the markup defaults.
 
 import { addScene, preparePaths, setDraw, drawSequence, popSequence, seg, smooth } from '../engine.js';
+import { registerWaypoints } from '../turtle.js';
 
 export function initVisionScene() {
   const el = document.getElementById('vision');
@@ -27,6 +28,26 @@ export function initVisionScene() {
   const poseBones = pose ? [...pose.querySelectorAll('.pose-bone')] : [];
   const poseJoints = pose ? [...pose.querySelectorAll('.pose-joint')] : [];
   if (pose) preparePaths(pose);
+
+  // Follow two sides of the lead detection box while the overlay is drawn. Keeping
+  // document y monotonic preserves a natural scroll-to-arc mapping on every viewport.
+  registerWaypoints('vision', (_section, { vh }) => {
+    const r = fig.getBoundingClientRect();
+    const top = r.top + window.scrollY;
+    const at = (x, y) => ({ x: r.left + (x / 1280) * r.width, y: top + (y / 853) * r.height });
+    const points = [
+      { ...at(596, 352), pen: 'down', visible: true },
+      { ...at(596, 524), pen: 'down', visible: true },
+      { ...at(810, 530), pen: 'down', visible: true },
+      { x: r.left - 20, y: top + r.height + 20, pen: 'up', visible: false },
+    ];
+    const start = top - vh * 0.95;
+    const end = top - vh * 0.25;
+    return points.map((point, index) => ({
+      ...point,
+      scrollAnchor: start + (end - start) * (index / (points.length - 1)),
+    }));
+  });
 
   addScene({
     el: fig,

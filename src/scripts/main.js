@@ -1,6 +1,5 @@
-// Boot (plan.md §4): finished states live in the markup by default; this script
-// layers the scroll-driven story on top. Reduced-motion users never get the
-// `anim` class, so they keep finished states and simple fades only.
+// Finished states live in markup. Motion-capable clients layer the scroll story on
+// top; reduced-motion users keep the complete static document.
 
 import { start, addGlobal, onRemeasure } from './engine.js';
 import { initTurtle, updateTurtle, remeasure as remeasureTurtle, guideInfo } from './turtle.js';
@@ -14,11 +13,11 @@ import { initSectionScenes, initNotesInteractive } from './scenes/sections.js';
 
 const anim = document.documentElement.classList.contains('anim');
 
-// functional (not decorative) enhancements run for every JS user, reduced motion included
+// This filtering interaction is functional and remains available with reduced motion.
 initNotesInteractive();
 
 if (anim) {
-  // scenes register turtle waypoints, so they init before the turtle measures
+  // Scenes register their local turtle choreography before the document path is measured.
   performance.mark('b0');
   initHeroScene();
   initGenAiScene();
@@ -32,49 +31,49 @@ if (anim) {
   const hasTurtle = initTurtle();
   performance.mark('b4');
 
-  // progress hairline: 1px under the top bar, tinted to the current section's accent
   const hairline = document.getElementById('progress-hairline');
   const sections = ['hero', 'foundations', 'ml', 'vision', 'generative', 'mlops', 'work', 'notes', 'contact']
     .map((id) => document.getElementById(id))
     .filter(Boolean);
-
   const hasVine = hasTurtle && initVine();
 
-  // idle blink (owner request): the turtle breathes and gives a quick faceless
-  // squash-blink after ~2.4s without scrolling. Time-based by definition — the one
-  // deliberate exception to §4's no-timers rule; it stops the instant scroll resumes,
-  // never runs under reduced motion, and touches nothing but the turtle itself.
+  // One idle timer gives the plotter pen a quiet tap after scrolling stops.
   const turtleInner = document.getElementById('turtle-inner');
-  let lastMove = performance.now();
-  if (turtleInner) {
-    setInterval(() => {
-      if (performance.now() - lastMove > 2400) turtleInner.classList.add('idle');
-    }, 600);
-  }
+  let idleTimer = 0;
+  const armIdle = () => {
+    if (!turtleInner) return;
+    clearTimeout(idleTimer);
+    turtleInner.classList.remove('idle');
+    idleTimer = setTimeout(() => turtleInner.classList.add('idle'), 2400);
+  };
+  armIdle();
 
-  addGlobal((y, p, vh) => {
-    lastMove = performance.now();
-    if (turtleInner) turtleInner.classList.remove('idle');
+  addGlobal((y, p, vh, dt, changed) => {
+    if (changed) armIdle();
+    let keepAlive = false;
+
     if (hasTurtle) {
-      const len = updateTurtle(y);
-      if (hasVine && len != null) updateVine(len);
+      const turtle = updateTurtle(y, dt);
+      if (turtle) {
+        keepAlive = turtle.moving;
+        if (hasVine) updateVine(turtle.len);
+      }
     }
-    if (hairline) {
+
+    if (hairline && changed) {
       hairline.style.transform = `scaleX(${p.toFixed(4)})`;
       const mid = y + vh * 0.4;
       for (let i = sections.length - 1; i >= 0; i--) {
         const top = sections[i].getBoundingClientRect().top + y;
-        if (mid >= top) {
-          const accent = getComputedStyle(sections[i]).getPropertyValue('--accent');
-          if (accent) hairline.style.background = accent;
-          break;
-        }
+        if (mid < top) continue;
+        const accent = getComputedStyle(sections[i]).getPropertyValue('--accent');
+        if (accent) hairline.style.background = accent;
+        break;
       }
     }
+    return keepAlive;
   });
 
-  // the engine re-measures on resize and document-height changes (lazy images,
-  // font swaps); the turtle rebuilds its guide path, then the vine regrows on it
   if (hasTurtle) {
     onRemeasure(() => {
       performance.mark('v0');
@@ -87,7 +86,15 @@ if (anim) {
 
   start();
   performance.mark('b5');
-  for (const [m, a, b] of [['scenes', 'b0', 'b1'], ['ink', 'b1', 'b2'], ['headings', 'b2', 'b3'], ['turtle-init', 'b3', 'b4'], ['start+measure', 'b4', 'b5'], ['turtle-measure', 'v0', 'v1'], ['vine-measure', 'v1', 'v2']]) {
-    try { performance.measure(m, a, b); } catch {}
+  for (const [name, a, b] of [
+    ['scenes', 'b0', 'b1'],
+    ['ink', 'b1', 'b2'],
+    ['headings', 'b2', 'b3'],
+    ['turtle-init', 'b3', 'b4'],
+    ['start+measure', 'b4', 'b5'],
+    ['turtle-measure', 'v0', 'v1'],
+    ['vine-measure', 'v1', 'v2'],
+  ]) {
+    try { performance.measure(name, a, b); } catch {}
   }
 }

@@ -14,6 +14,8 @@ export function initGenAiScene() {
   const scribbles = [...el.querySelectorAll('[data-part="scribble"]')];
   const frame = el.querySelector('[data-part="frame"]');
   const steps = [...el.querySelectorAll('.gen-step')];
+  const stages = [...el.querySelectorAll('.gen-stage')];
+  const conditioning = el.querySelector('.gen-conditioning');
   const doodle = el.querySelector('.gen-doodle');
   const doodleCurve = doodle && doodle.querySelector('[data-part="curve"]');
   const doodleDots = doodle ? [...doodle.querySelectorAll('[data-part="dot"]')] : [];
@@ -23,23 +25,30 @@ export function initGenAiScene() {
 
   // crossfade windows for steps 1..4: [in-start, in-end, out-start, out-end]
   const FADE = [
-    [0.0, 0.0, 0.3, 0.42],
+    [0.0, 0.02, 0.3, 0.42],
     [0.3, 0.42, 0.48, 0.58],
     [0.48, 0.58, 0.64, 0.74],
     [0.64, 0.76, 2, 3],
   ];
   const washWindows = [0.08, 0.26, 0.46, 0.68];
 
-  // turtle: pen-down along the figure's right edge while scribbling, pen-up after
-  registerWaypoints('generative', () => {
+  // The turtle traces the figure's frame, then disappears before travelling onward.
+  registerWaypoints('generative', (_section, { vh }) => {
     const fig = el.querySelector('.gen-figure');
     const r = fig.getBoundingClientRect();
     const top = r.top + window.scrollY;
-    return [
-      { x: r.right + 26, y: top - 30, pen: 'down' },
-      { x: r.right + 26, y: top + r.height * 0.5, pen: 'down' },
-      { x: r.right + 26, y: top + r.height + 30, pen: 'up' },
+    const points = [
+      { x: r.left + 12, y: top - 10, pen: 'down', visible: true },
+      { x: r.right - 18, y: top + 22, pen: 'down', visible: true },
+      { x: r.right + 18, y: top + r.height * 0.72, pen: 'down', visible: true },
+      { x: r.right + 22, y: top + r.height + 22, pen: 'up', visible: false },
     ];
+    const start = top - vh * 0.8;
+    const end = top + r.height - vh * 0.35;
+    return points.map((point, index) => ({
+      ...point,
+      scrollAnchor: start + (end - start) * (index / (points.length - 1)),
+    }));
   });
 
   addScene({
@@ -60,6 +69,13 @@ export function initGenAiScene() {
       for (let i = 0; i < steps.length; i++) {
         const [a, b, c, d] = FADE[i];
         steps[i].style.opacity = (smooth(seg(s, a, b)) * (1 - smooth(seg(s, c, d)))).toFixed(3);
+      }
+
+      const stageIndex = s < 0.3 ? 0 : s < 0.48 ? 1 : s < 0.64 ? 2 : 3;
+      stages.forEach((stage, i) => stage.classList.toggle('is-active', i === stageIndex));
+      if (conditioning) {
+        const showInputs = smooth(seg(s, 0.24, 0.38)) * (1 - smooth(seg(s, 0.68, 0.82)));
+        conditioning.style.opacity = showInputs.toFixed(3);
       }
 
       // contour frame draws late, then settles to 25%

@@ -5,8 +5,93 @@
 // graph, and the Contact signature. Everything rewinds with scroll.
 
 import { addScene, preparePaths, setDraw, drawSequence, popSequence, seg, smooth } from '../engine.js';
+import { registerWaypoints } from '../turtle.js';
 
 const NS = 'http://www.w3.org/2000/svg';
+
+function documentBox(element) {
+  const r = element.getBoundingClientRect();
+  return { left: r.left, right: r.right, width: r.width, height: r.height, top: r.top + window.scrollY };
+}
+
+function spread(points, start, end) {
+  return points.map((point, index) => ({
+    ...point,
+    scrollAnchor: start + (end - start) * (index / Math.max(points.length - 1, 1)),
+  }));
+}
+
+function registerSectionWaypoints() {
+  registerWaypoints('foundations', (_section, { vh }) => {
+    const figure = document.querySelector('.fnd-contours svg');
+    const r = documentBox(figure);
+    return spread([
+      { x: r.left + r.width * 0.86, y: r.top + r.height * 0.2, pen: 'down', visible: true },
+      { x: r.left + r.width * 0.66, y: r.top + r.height * 0.43, pen: 'down', visible: true },
+      { x: r.left + r.width * 0.5, y: r.top + r.height * 0.58, pen: 'down', visible: true },
+      { x: r.left - 18, y: r.top + r.height + 18, pen: 'up', visible: false },
+    ], r.top - vh * 0.95, r.top - vh * 0.45);
+  });
+
+  registerWaypoints('ml', (_section, { vh }) => {
+    const r = documentBox(document.querySelector('.ml-scene'));
+    return spread([
+      { x: r.left + r.width * 0.65, y: r.top + r.height * 0.24, pen: 'down', visible: true },
+      { x: r.left + r.width * 0.52, y: r.top + r.height * 0.51, pen: 'down', visible: true },
+      { x: r.left + r.width * 0.39, y: r.top + r.height * 0.84, pen: 'down', visible: true },
+      { x: r.right + 18, y: r.top + r.height + 18, pen: 'up', visible: false },
+    ], r.top - vh * 0.95, r.top - vh * 0.4);
+  });
+
+  registerWaypoints('mlops', (_section, { vh }) => {
+    const pipeline = [...document.querySelectorAll('.pipeline')].find((svg) => svg.getClientRects().length);
+    const r = documentBox(pipeline);
+    const horizontal = r.width > r.height * 2;
+    const points = [];
+    for (let i = 0; i < 5; i++) {
+      points.push(horizontal
+        ? { x: r.left + r.width * (0.083 + i * 0.2085), y: r.top + r.height * 0.48 + i * 3 }
+        : { x: r.left + r.width * 0.5, y: r.top + r.height * (0.065 + i * 0.2) });
+    }
+    return spread([
+      ...points.map((point) => ({ ...point, pen: 'down', visible: true })),
+      { x: r.right + 18, y: r.top + r.height + 18, pen: 'up', visible: false },
+    ], r.top - vh * 0.92, r.top - vh * 0.4);
+  });
+
+  registerWaypoints('work', (_section, { vh }) => {
+    const r = documentBox(document.querySelector('.cs-shot-frame'));
+    return spread([
+      { x: r.left + 8, y: r.top - 8, pen: 'down', visible: true },
+      { x: r.right - 8, y: r.top + 18, pen: 'down', visible: true },
+      { x: r.right + 8, y: r.top + r.height * 0.82, pen: 'down', visible: true },
+      { x: r.right + 18, y: r.top + r.height + 22, pen: 'up', visible: false },
+    ], r.top - vh * 0.9, r.top - vh * 0.55);
+  });
+
+  registerWaypoints('notes', (_section, { vh }) => {
+    const r = documentBox(document.querySelector('.notes-graph'));
+    const at = (x, y) => ({ x: r.left + (x / 300) * r.width, y: r.top + (y / 340) * r.height });
+    return spread([
+      { ...at(150, 62), pen: 'down', visible: true },
+      { ...at(236, 116), pen: 'down', visible: true },
+      { ...at(212, 200), pen: 'down', visible: true },
+      { ...at(254, 280), pen: 'down', visible: true },
+      { x: r.left - 18, y: r.top + r.height + 18, pen: 'up', visible: false },
+    ], r.top - vh * 0.92, r.top - vh * 0.45);
+  });
+
+  registerWaypoints('contact', (_section, { vh }) => {
+    const r = documentBox(document.querySelector('.signature'));
+    return spread([
+      { x: r.left + r.width * 0.06, y: r.top + r.height * 0.4, pen: 'down', visible: true },
+      { x: r.left + r.width * 0.4, y: r.top + r.height * 0.48, pen: 'down', visible: true },
+      { x: r.left + r.width * 0.72, y: r.top + r.height * 0.56, pen: 'down', visible: true },
+      { x: r.left + r.width * 0.94, y: r.top + r.height * 0.68, pen: 'down', visible: true },
+      { x: r.right + 18, y: r.top + r.height + 18, pen: 'up', visible: false },
+    ], r.top - vh * 0.85, r.top - vh * 0.2);
+  });
+}
 
 // generic: one scene per drawing root; paths draw, then pops settle
 function autoScene(root, { startF = 0.92, endF = 0.55, drawEnd = 0.8, popStart = 0.55 } = {}) {
@@ -33,6 +118,7 @@ function autoScene(root, { startF = 0.92, endF = 0.55, drawEnd = 0.8, popStart =
 }
 
 export function initSectionScenes() {
+  registerSectionWaypoints();
   // §10.2 — physics & math: orbit, vector field, annotated equation, contours
   autoScene(document.querySelector('.fnd-orbit'));
   autoScene(document.querySelector('.fnd-field'), { drawEnd: 0.9, popStart: 0.8 });

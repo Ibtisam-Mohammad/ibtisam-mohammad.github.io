@@ -56,7 +56,7 @@
   --radius-lg: 12px;
   --stroke: 2px;
 
-  /* -- motion (micro-easing only; all narrative motion is f(scroll), plan.md §4) -- */
+  /* -- motion (scene state follows scroll; the turtle body gets a short spring settle) -- */
   --ease: cubic-bezier(0.33, 0, 0.2, 1);
   --t-fast: 150ms;
   --t-max: 200ms;

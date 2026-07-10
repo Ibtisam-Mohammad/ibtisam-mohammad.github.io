@@ -26,6 +26,7 @@ async function targets(page, mobile) {
       return el ? el.getBoundingClientRect().top + window.scrollY : 0;
     };
     const gen = document.getElementById('generative').getBoundingClientRect();
+    const hero = document.getElementById('hero').getBoundingClientRect();
     const gTop = gen.top + window.scrollY;
     const gBottom = gen.bottom + window.scrollY;
     const gStart = gTop - vh * 0.8;
@@ -33,7 +34,7 @@ async function targets(page, mobile) {
     const at = (s) => Math.round(gStart + s * (gEnd - gStart));
     const endY = document.documentElement.scrollHeight - vh;
     const all = {
-      'hero-mid': Math.round(vh * 0.5),
+      'hero-mid': Math.round(Math.max(hero.height - vh, 1) * 0.48),
       'fnd-mid': Math.round(topOf('.fnd-orbit') - vh * 0.5),
       'ml-mid': Math.round(topOf('.ml-scene') - vh * 0.5),
       'vision-mid': Math.round(topOf('.cv-figure') - vh * 0.62),

@@ -1,38 +1,30 @@
-// Scroll engine core (plan.md §4). The page is a pure function of scroll position:
-// one rAF loop reads scrollY; every animated property is written as f(p) or f(s_local).
-// No timers drive visible animation. Scenes activate via IntersectionObserver one
-// viewport early / late; inactive scenes cost zero work per frame.
+// Scroll engine core. Scene state remains an exact function of scroll position.
+// requestAnimationFrame sleeps while idle and stays alive only when a global updater
+// explicitly reports settling motion, such as the turtle's short display spring.
 
 export const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
-// local progress of s within [a, b]
 export const seg = (s, a, b) => clamp01((s - a) / (b - a));
-// smoothstep for windows that want soft ends (used sparingly; scrub stays mostly linear)
 export const smooth = (t) => t * t * (3 - 2 * t);
 
 const scenes = [];
 const active = new Set();
+const globalUpdaters = [];
+const remeasureHooks = [];
 let lastY = -1;
 let forceFrame = true;
 let vh = 0;
 let io = null;
-const globalUpdaters = []; // fn(y, p, vh) — turtle, hairline: run every changed frame
-const remeasureHooks = []; // run after every measureAll (resize, doc-height change)
+let raf = 0;
+let lastTs = 0;
 
 export function addGlobal(fn) {
   globalUpdaters.push(fn);
 }
+
 export function onRemeasure(fn) {
   remeasureHooks.push(fn);
 }
 
-/**
- * scene: {
- *   el: activation element (IntersectionObserver target),
- *   measure(rect, vh): called on init/resize with el's document-space rect -> sets start/end,
- *   start, end: scrollY range mapping to s in [0,1],
- *   update(s): writes styles,
- * }
- */
 export function addScene(scene) {
   scenes.push(scene);
 }
@@ -43,24 +35,38 @@ function docRect(el) {
   return { top: r.top + y, bottom: r.bottom + y, height: r.height, left: r.left, width: r.width };
 }
 
-export function measureAll() {
-  vh = window.innerHeight;
-  for (const s of scenes) s.measure(docRect(s.el), vh);
-  for (const fn of remeasureHooks) fn();
-  forceFrame = true;
+function requestFrame() {
+  if (!raf) raf = requestAnimationFrame(frame);
 }
 
-function frame() {
+export function measureAll() {
+  vh = window.innerHeight;
+  for (const scene of scenes) scene.measure(docRect(scene.el), vh);
+  for (const fn of remeasureHooks) fn();
+  forceFrame = true;
+  requestFrame();
+}
+
+function frame(ts) {
+  raf = 0;
   const y = window.scrollY;
-  if (y !== lastY || forceFrame) {
-    const denom = document.documentElement.scrollHeight - vh;
-    const p = denom > 0 ? clamp01(y / denom) : 0;
-    for (const s of active) s.update(seg(y, s.start, s.end));
-    for (const fn of globalUpdaters) fn(y, p, vh);
-    lastY = y;
-    forceFrame = false;
+  const changed = y !== lastY;
+  const denom = document.documentElement.scrollHeight - vh;
+  const p = denom > 0 ? clamp01(y / denom) : 0;
+  const dt = lastTs ? Math.min((ts - lastTs) / 1000, 0.05) : 1 / 60;
+  let keepAlive = false;
+
+  if (changed || forceFrame) {
+    for (const scene of active) scene.update(seg(y, scene.start, scene.end));
   }
-  requestAnimationFrame(frame);
+  for (const fn of globalUpdaters) {
+    keepAlive = fn(y, p, vh, dt, changed) === true || keepAlive;
+  }
+
+  lastY = y;
+  lastTs = ts;
+  forceFrame = false;
+  if (keepAlive) requestFrame();
 }
 
 export function start() {
@@ -68,14 +74,14 @@ export function start() {
 
   io = new IntersectionObserver(
     (entries) => {
-      for (const e of entries) {
-        const scene = scenes.find((s) => s.el === e.target);
+      for (const entry of entries) {
+        const scene = scenes.find((candidate) => candidate.el === entry.target);
         if (!scene) continue;
-        if (e.isIntersecting) {
+        if (entry.isIntersecting) {
           active.add(scene);
           forceFrame = true;
+          requestFrame();
         } else {
-          // pin to a clean end state on exit so reload/deep-link states stay exact
           scene.update(window.scrollY < scene.start ? 0 : 1);
           active.delete(scene);
         }
@@ -83,68 +89,67 @@ export function start() {
     },
     { rootMargin: '100% 0%' }
   );
-  for (const s of scenes) io.observe(s.el);
+  for (const scene of scenes) io.observe(scene.el);
 
-  // one full pass so any scroll restore / anchor entry renders the correct mid-state
-  for (const s of scenes) s.update(seg(window.scrollY, s.start, s.end));
+  // Scroll restoration and deep links must render their exact state immediately.
+  for (const scene of scenes) scene.update(seg(window.scrollY, scene.start, scene.end));
 
-  let resizeT = 0;
+  let resizeTimer = 0;
   let lastSize = `${document.documentElement.clientWidth}x${document.documentElement.scrollHeight}`;
   const remeasure = () => {
-    clearTimeout(resizeT);
-    resizeT = setTimeout(() => {
-      // skip no-op re-measures (the ResizeObserver's initial fire would otherwise
-      // rebuild the vine a second time at boot — a full long-task for nothing)
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
       const size = `${document.documentElement.clientWidth}x${document.documentElement.scrollHeight}`;
       if (size === lastSize) return;
       lastSize = size;
       measureAll();
     }, 150);
   };
+
+  window.addEventListener('scroll', requestFrame, { passive: true });
   window.addEventListener('resize', remeasure, { passive: true });
-  // document height changes (lazy images, fonts) shift every mapping
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) return;
+    lastTs = 0;
+    forceFrame = true;
+    requestFrame();
+  });
   new ResizeObserver(remeasure).observe(document.body);
 
-  requestAnimationFrame(frame);
+  requestFrame();
 }
 
-/* ---------- stroke-reveal helpers ---------- */
-
-// Prepare [data-draw] paths inside root: freeze total length into dasharray.
-// Finished state (offset 0) is the no-JS default; callers scrub the offset.
+// Freeze path lengths into dash arrays. Markup defaults to the finished state;
+// animated users are rewound here before the first frame.
 export function preparePaths(root) {
   const paths = root.querySelectorAll('[data-draw]');
-  for (const p of paths) {
-    const L = p.getTotalLength();
-    p.dataset.len = L;
-    // 3x off-slack: stretched viewBoxes (preserveAspectRatio="none") can render the
-    // path longer on screen than its user-space length — slack keeps the tail hidden
-    p.style.strokeDasharray = `${L} ${L * 3}`;
-    p.style.strokeDashoffset = `${L}`; // hidden until first update
+  for (const path of paths) {
+    const length = path.getTotalLength();
+    path.dataset.len = length;
+    path.style.strokeDasharray = `${length} ${length * 3}`;
+    path.style.strokeDashoffset = `${length}`;
   }
   return [...paths];
 }
 
-export function setDraw(p, t) {
-  p.style.strokeDashoffset = String((1 - clamp01(t)) * p.dataset.len);
+export function setDraw(path, t) {
+  path.style.strokeDashoffset = String((1 - clamp01(t)) * path.dataset.len);
 }
 
-// draw a list of paths sequentially across window [a, b] of s
 export function drawSequence(paths, s, a, b) {
-  const n = paths.length;
-  if (!n) return;
-  const w = (b - a) / n;
-  for (let i = 0; i < n; i++) setDraw(paths[i], seg(s, a + i * w, a + (i + 1) * w));
+  const count = paths.length;
+  if (!count) return;
+  const width = (b - a) / count;
+  for (let i = 0; i < count; i++) setDraw(paths[i], seg(s, a + i * width, a + (i + 1) * width));
 }
 
-// pop [data-pop] elements (dots, chips, tapes) in sequence: opacity + scale settle
-export function popSequence(els, s, a, b) {
-  const n = els.length;
-  if (!n) return;
-  const w = (b - a) / n;
-  for (let i = 0; i < n; i++) {
-    const t = smooth(clamp01((s - (a + i * w)) / (w * 2.2 + 1e-9)));
-    els[i].style.opacity = t >= 1 ? '' : t.toFixed(3);
-    els[i].style.transform = t >= 1 ? '' : `scale(${(0.4 + 0.6 * t).toFixed(3)})`;
+export function popSequence(elements, s, a, b) {
+  const count = elements.length;
+  if (!count) return;
+  const width = (b - a) / count;
+  for (let i = 0; i < count; i++) {
+    const t = smooth(clamp01((s - (a + i * width)) / (width * 2.2 + 1e-9)));
+    elements[i].style.opacity = t >= 1 ? '' : t.toFixed(3);
+    elements[i].style.transform = t >= 1 ? '' : `scale(${(0.4 + 0.6 * t).toFixed(3)})`;
   }
 }

@@ -172,8 +172,8 @@ a:hover { text-decoration-thickness: 2.5px; }
 /* mobile: reserve a 44px right lane — the turtle and vine must never overlap text (§3) */
 @media (max-width: 719px) {
   .container {
-    width: calc(100% - var(--gutter) - 44px);
-    margin-inline: var(--gutter) 44px;
+    width: min(var(--content-max), 100% - 2 * var(--gutter));
+    margin-inline: auto;
   }
 }
 .section {
@@ -258,6 +258,8 @@ main { position: relative; z-index: var(--z-content); }
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   padding: var(--s-5);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .cols-2, .cols-3 { display: grid; gap: var(--s-5); grid-template-columns: 1fr; }
 @media (min-width: 720px) {
@@ -324,42 +326,63 @@ html.anim #vine-layer { display: block; }
   left: 0;
   will-change: transform;
   overflow: visible;
+  opacity: 0;
+  transition: opacity 120ms var(--ease);
 }
+#turtle.is-visible { opacity: 0.96; }
 @media (max-width: 719px) {
-  #turtle { width: 24px; height: 16.8px; }
+  #vine-layer { display: none !important; }
+  #turtle { width: 26px; height: 18.4px; }
 }
 #turtle-inner {
-  transform-box: fill-box;
-  transform-origin: center;
-  opacity: 0.85; /* pen-up travel */
-  transition: transform var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease);
+  opacity: 0.82;
+  transition: opacity var(--t-fast) var(--ease);
 }
 #turtle-inner.pen-down {
   opacity: 1;
-  transform: scale(1.05) rotate(6deg);
 }
+#turtle-body,
+#turtle-feet,
+.turtle-foot {
+  transform-box: fill-box;
+  transform-origin: center;
+  will-change: transform;
+}
+#turtle-pen {
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: translateX(1.8px) scale(0.78);
+  transition: transform var(--t-fast) var(--ease);
+}
+.pen-contact {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(0.4);
+  transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+#turtle-inner.pen-down #turtle-pen { transform: translateX(0) scale(1); }
+#turtle-inner.pen-down .pen-contact { opacity: 1; transform: scale(1); }
 /* idle life: a breath, then a quick squash-"blink" — no face, still a plotter */
-html.anim #turtle-inner.idle {
-  animation: turtle-idle 2s var(--ease) infinite;
+html.anim #turtle-inner.idle #turtle-pen {
+  animation: turtle-pen-check 1.8s var(--ease) infinite;
 }
-@keyframes turtle-idle {
-  0%, 100% { transform: scale(1); }
-  32% { transform: scale(1.04); }
-  60% { transform: scale(1); }
-  67% { transform: scale(1.14, 0.68); }
-  74% { transform: scale(1); }
+@keyframes turtle-pen-check {
+  0%, 72%, 100% { transform: translateX(1.8px) scale(0.78); }
+  80% { transform: translateX(0) scale(1); }
+  87% { transform: translateX(2.6px) scale(0.72); }
 }
 
 /* ---------- the vine: the turtle's trail made visible, with accent branches ---------- */
-#vine-trail {
+.ink-trail {
   stroke: var(--ink-soft);
-  stroke-width: 1.6;
+  stroke-width: 1.35;
   stroke-linecap: round;
-  opacity: 0.5;
+  opacity: 0.34;
 }
 .vb-stem {
   fill: none;
-  stroke-width: 1.6;
+  stroke-width: 1.45;
   stroke-linecap: round;
 }
 .vb-part {
@@ -386,26 +409,34 @@ html.anim .wash { opacity: 0; } /* the engine reveals; scrolling up un-reveals *
 
 /* ---------- stroke-reveal headings (plan.md §6 rule 2) ---------- */
 .stroke-heading { position: relative; }
+.stroke-heading .sh-real { position: relative; z-index: 1; display: block; }
 .sh-svg { display: none; }
 html.anim .stroke-heading .sh-real {
-  position: absolute !important;
-  width: 1px; height: 1px;
-  padding: 0; margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
+  position: relative !important;
+  width: auto;
+  height: auto;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+  clip-path: none;
+  white-space: normal;
 }
 html.anim .sh-svg {
   display: block;
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  top: -0.04em;
   height: calc(1.18 * var(--step-4));
   width: auto;
   max-width: 100%;
+  pointer-events: none;
 }
 .sh-svg path {
-  stroke: var(--ink);
-  stroke-width: 4.5; /* glyph units (em/100): ~1.8px at rendered size */
-  fill: var(--ink);
-  fill-opacity: 0; /* engine fills after the outlines complete */
+  stroke: var(--accent, var(--ink-soft));
+  stroke-width: 3.5;
+  fill: none;
+  opacity: 0.5;
 }
 
 /* pops (dots, chips, tapes) scale about their own center when the engine drives them */

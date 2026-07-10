@@ -31,12 +31,12 @@ export function initHeroScene() {
     // document y that renders at lineVY when scrollY = span * t
     const at = (t) => span * t + lineVY;
     return [
-      { x: u(0.014), y: at(0.3), vy: lineVY, pen: 'down' },
-      { x: u(0.3), y: at(0.48), vy: lineVY, pen: 'down' },
-      { x: u(0.58), y: at(0.68), vy: lineVY, pen: 'up' },
+      { x: u(0.014), y: at(0.3), vy: lineVY, pen: 'down', visible: true },
+      { x: u(0.3), y: at(0.48), vy: lineVY, pen: 'down', visible: true },
+      { x: u(0.58), y: at(0.68), vy: lineVY, pen: 'up', visible: false },
       // glide back to the left lane before the section ends, so the visible trail
       // exits cleanly instead of kinking across the next section's margin drawings
-      { x: r.left - 30, y: at(0.88), pen: 'up' },
+      { x: r.left - 30, y: at(0.88), pen: 'up', visible: false },
     ];
   });
 
