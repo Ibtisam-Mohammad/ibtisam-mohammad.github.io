@@ -1,6 +1,6 @@
-// Purposeful ink: only pen-down guide ranges remain visible. A small sprig appears
-// at each completed section milestone in the outer margin. Mobile keeps the local
-// turtle cameos but omits this document-spanning decorative layer entirely.
+// The turtle leaves a persistent route trace that grows and rewinds with scroll.
+// Pen-down ranges add a darker live stroke, while sparse milestone sprigs retain
+// the vine character without rebuilding the old recursive DOM-heavy thicket.
 
 import { clamp01, seg, smooth } from './engine.js';
 
@@ -19,6 +19,9 @@ const SECTION_ACCENT = {
 const LEAF_D = 'M0 0 C 3.2 -2.6, 7 -2.8, 9.4 0 C 7 2.8, 3.2 2.6, 0 0 Z';
 
 const state = {
+  routeTrail: null,
+  routeStart: 0,
+  routeLength: 1,
   trailGroup: null,
   branchGroup: null,
   trails: [],
@@ -120,11 +123,19 @@ function buildSprig(milestone, index, docW, rand) {
 }
 
 export function measureVine(info) {
-  if (!state.trailGroup || !state.branchGroup) return;
+  if (!state.routeTrail || !state.trailGroup || !state.branchGroup) return;
   state.trailGroup.textContent = '';
   state.branchGroup.textContent = '';
   state.trails = [];
   state.branches = [];
+
+  const heroMilestone = info.milestones.find((milestone) => milestone.section === 'hero');
+  state.routeStart = heroMilestone?.arc ?? 0;
+  state.routeLength = Math.max(info.total - state.routeStart, 1);
+  state.routeTrail.setAttribute('d', rangePath(info.samples, state.routeStart, info.total));
+  state.routeTrail.style.strokeDasharray = `${state.routeLength} ${state.routeLength * 3}`;
+  state.routeTrail.style.strokeDashoffset = `${state.routeLength}`;
+
   if (window.innerWidth < 720) return;
 
   for (const range of info.penRanges) {
@@ -155,6 +166,13 @@ export function measureVine(info) {
 export function updateVine(len) {
   // The visible ink ends at the pen mounted behind the turtle's shell.
   const penArc = Math.max(0, len - 11);
+  const routeProgress = clamp01(
+    (penArc - state.routeStart) / Math.max(state.routeLength, 1)
+  );
+  state.routeTrail.style.strokeDashoffset = String(
+    state.routeLength * (1 - routeProgress)
+  );
+
   for (const trail of state.trails) {
     const t = clamp01((penArc - trail.start) / Math.max(trail.end - trail.start, 1));
     const presence = smooth(seg(penArc, trail.start, trail.start + 18))
@@ -181,6 +199,7 @@ export function updateVine(len) {
 export function initVine() {
   const svg = document.getElementById('turtle-guide-svg');
   if (!svg) return false;
+  state.routeTrail = el('path', { id: 'vine-trail', fill: 'none' }, svg);
   state.trailGroup = el('g', { id: 'ink-trails' }, svg);
   state.branchGroup = el('g', { id: 'vine-branches' }, svg);
   return true;

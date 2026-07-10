@@ -331,7 +331,6 @@ html.anim #vine-layer { display: block; }
 }
 #turtle.is-visible { opacity: 0.96; }
 @media (max-width: 719px) {
-  #vine-layer { display: none !important; }
   #turtle { width: 26px; height: 18.4px; }
 }
 #turtle-inner {
@@ -376,11 +375,19 @@ html.anim #turtle-inner.idle #turtle-pen {
 }
 
 /* ---------- the vine: the turtle's trail made visible, with accent branches ---------- */
+#vine-trail {
+  fill: none;
+  stroke: var(--ink-soft);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.42;
+}
 .ink-trail {
   stroke: var(--ink-soft);
-  stroke-width: 1.35;
+  stroke-width: 1.55;
   stroke-linecap: round;
-  opacity: 0.34;
+  opacity: 0.46;
 }
 .vb-stem {
   fill: none;
@@ -391,6 +398,11 @@ html.anim #turtle-inner.idle #turtle-pen {
   transform-box: fill-box;
   transform-origin: 0% 50%;
   opacity: 0;
+}
+@media (max-width: 719px) {
+  #ink-trails,
+  #vine-branches { display: none; }
+  #vine-trail { stroke-width: 1.2; opacity: 0.32; }
 }
 
 /* ---------- washes (plan.md §7): tinted alpha-mask textures, static once revealed ---------- */
