@@ -326,7 +326,7 @@ html.anim #vine-layer { display: block; }
   left: 0;
   will-change: transform;
   overflow: visible;
-  opacity: 0.96;
+  opacity: 0;
   transition: opacity 120ms var(--ease);
 }
 #turtle.is-visible { opacity: 0.96; }
@@ -335,13 +335,15 @@ html.anim #vine-layer { display: block; }
   #turtle { width: 26px; height: 18.4px; }
 }
 #turtle-inner {
+  transform-box: fill-box;
+  transform-origin: center;
+  will-change: transform;
   opacity: 0.9;
   transition: opacity var(--t-fast) var(--ease);
 }
 #turtle-inner.pen-down {
   opacity: 1;
 }
-#turtle-body,
 #turtle-feet,
 .turtle-foot {
   transform-box: fill-box;

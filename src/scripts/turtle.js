@@ -1,41 +1,37 @@
-// The turtle follows an authored document-space path. Scroll determines the exact
-// target arc position; a short critically damped spring affects only the rendered
-// turtle, while section drawings remain deterministic functions of scroll.
+// The turtle follows an authored document-space path. Scroll determines its exact
+// arc position, so the body, heading, pen state, and ink always stay synchronized.
 
 import { clamp01, seg, smooth } from './engine.js';
 
-// Hidden travel still alternates margins, but visible work is supplied by each scene.
+// Entry and exit lanes follow each scene's first and last drawing points. This keeps
+// pen-up travel short now that the turtle remains visible between sections.
 const ROUTE = [
-  ['hero', 'L'],
-  ['foundations', 'L'],
-  ['ml', 'R'],
-  ['vision', 'L'],
-  ['generative', 'R'],
-  ['mlops', 'L'],
-  ['work', 'R'],
-  ['notes', 'L'],
-  ['contact', 'R'],
+  ['hero', 'L', 'R'],
+  ['foundations', 'R', 'R'],
+  ['ml', 'R', 'R'],
+  ['vision', 'R', 'L'],
+  ['generative', 'L', 'L'],
+  ['mlops', 'L', 'L'],
+  ['work', 'L', 'L'],
+  ['notes', 'L', 'L'],
+  ['contact', 'L', 'R'],
 ];
 
 const PLATE_SECTIONS = ['foundations', 'ml', 'vision', 'generative', 'mlops'];
-const SPRING_OMEGA = 26;
-
 const state = {
   layer: null,
   vineLayer: null,
   guide: null,
   turtle: null,
   inner: null,
-  body: null,
   pen: null,
   feet: [],
   plates: [],
   waypoints: [],
   cum: [],
   samples: null,
+  scrolls: [],
   total: 0,
-  displayLen: Number.NaN,
-  velocity: 0,
   penNow: null,
   visibleNow: null,
   penRanges: [],
@@ -43,8 +39,8 @@ const state = {
   extraWaypoints: {},
 };
 
-// Scene callbacks return document-space waypoints in traversal order. Waypoints are
-// visible by default; hidden lane travel is inserted around them automatically.
+// Scene callbacks return document-space waypoints in traversal order. Their first
+// and last points also define the visible pen-up approach and departure lanes.
 export function registerWaypoints(sectionId, fn) {
   state.extraWaypoints[sectionId] = fn;
 }
@@ -56,19 +52,30 @@ function docRect(el) {
 }
 
 function laneX(side, docW, contentRect, mobile) {
-  if (mobile) return docW - 26;
-  if (side === 'L') return Math.max(contentRect.left / 2, 26);
-  if (side === 'R') return Math.min((docW + contentRect.right) / 2, docW - 26);
+  const inset = mobile ? 40 : 36;
+  if (mobile) return docW - inset;
+  if (side === 'L') return Math.max(contentRect.left / 2, inset);
+  if (side === 'R') return Math.min((docW + contentRect.right) / 2, docW - inset);
   return docW / 2;
 }
 
 function targetForY(y) {
-  const wps = state.waypoints;
-  if (wps.length < 2) return { index: 0, len: 0 };
-  let i = 0;
-  while (i < wps.length - 2 && y > wps[i + 1].anchor) i++;
-  const t = seg(y, wps[i].anchor, wps[i + 1].anchor);
-  return { index: i, len: state.cum[i] + (state.cum[i + 1] - state.cum[i]) * t };
+  const anchors = state.scrolls;
+  const arcs = state.samples?.cum;
+  if (!anchors.length || !arcs?.length) return { len: 0 };
+  if (y <= anchors[0]) return { len: arcs[0] };
+  if (y >= anchors[anchors.length - 1]) return { len: arcs[arcs.length - 1] };
+
+  let lo = 1;
+  let hi = anchors.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (anchors[mid] < y) lo = mid + 1;
+    else hi = mid;
+  }
+  const i = lo;
+  const t = seg(y, anchors[i - 1], anchors[i]);
+  return { len: arcs[i - 1] + (arcs[i] - arcs[i - 1]) * t };
 }
 
 function intervalAtArc(arc) {
@@ -134,6 +141,7 @@ export function measureTurtle() {
   const contentEl = document.querySelector('.container');
   if (!contentEl) return;
   const content = contentEl.getBoundingClientRect();
+  const routeInset = mobile ? 40 : 36;
 
   state.layer.style.height = `${docH}px`;
   if (state.vineLayer) state.vineLayer.style.height = `${docH}px`;
@@ -141,18 +149,16 @@ export function measureTurtle() {
 
   const wps = [];
   const last = ROUTE.length - 1;
-  ROUTE.forEach(([id, side], routeIndex) => {
+  ROUTE.forEach(([id, entrySide, exitSide], routeIndex) => {
     const section = document.getElementById(id);
     if (!section) return;
     const r = docRect(section);
-    const lane = laneX(side, docW, content, mobile);
-
-    wps.push({ x: lane, y: r.top + 24, pen: 'up', visible: true, viewport: 0.92, boundary: routeIndex > 0, section: id });
+    const sceneWaypoints = [];
     const extra = state.extraWaypoints[id];
     if (extra) {
       for (const waypoint of extra(r, { mobile, docW, vh })) {
-        const x = mobile ? Math.max(4, Math.min(docW - 26, waypoint.x)) : waypoint.x;
-        wps.push({
+        const x = Math.max(routeInset, Math.min(docW - routeInset, waypoint.x));
+        sceneWaypoints.push({
           ...waypoint,
           x,
           pen: waypoint.pen || 'up',
@@ -162,42 +168,55 @@ export function measureTurtle() {
         });
       }
     }
+    const entryLane = sceneWaypoints[0]?.x ?? laneX(entrySide, docW, content, mobile);
+    const exitLane = sceneWaypoints[sceneWaypoints.length - 1]?.x ?? laneX(exitSide, docW, content, mobile);
+
+    wps.push({ x: entryLane, y: r.top + 24, pen: 'up', visible: true, viewport: 0.92, boundary: routeIndex > 0, section: id });
+    wps.push(...sceneWaypoints);
 
     if (routeIndex === last && !mobile) {
-      wps.push({ x: lane, y: r.bottom - 104, pen: 'up', visible: true, viewport: 0.58, milestone: true, section: id });
+      wps.push({ x: exitLane, y: r.bottom - 104, pen: 'up', visible: true, viewport: 0.58, milestone: true, section: id });
       wps.push({ x: content.left + content.width * 0.38, y: r.bottom - 62, pen: 'up', visible: true, section: id });
     } else {
-      wps.push({ x: lane, y: r.bottom - 28, pen: 'up', visible: true, viewport: 0.58, milestone: true, section: id });
+      wps.push({ x: exitLane, y: r.bottom - 28, pen: 'up', visible: true, viewport: 0.58, milestone: true, section: id });
     }
   });
 
   const maxScroll = Math.max(docH - vh, 1);
+  const headerBottom = document.querySelector('.topbar')?.getBoundingClientRect().bottom || 64;
+  const safeTop = headerBottom + 10;
+  const safeBottom = vh - (mobile ? 40 : 52);
   for (const w of wps) {
     const derived = w.y - (w.vy ?? vh * (w.viewport ?? 0.42));
-    w.anchor = Number.isFinite(w.scrollAnchor)
+    const preferred = Number.isFinite(w.scrollAnchor)
       ? Math.max(0, Math.min(maxScroll, w.scrollAnchor))
       : clamp01(derived / maxScroll) * maxScroll;
+    const earliest = Math.max(0, Math.min(maxScroll, w.y - safeBottom));
+    const latest = Math.max(0, Math.min(maxScroll, w.y - safeTop));
+    w.preferredAnchor = Math.max(earliest, Math.min(latest, preferred));
+    w.earliestAnchor = earliest;
+    w.latestAnchor = latest;
   }
-  for (let i = 1; i < wps.length; i++) wps[i].anchor = Math.max(wps[i].anchor, wps[i - 1].anchor + 1);
+  scheduleWaypointAnchors(wps);
 
   state.waypoints = wps;
-  const path = catmullRomPath(wps);
+  const path = catmullRomPath(wps, routeInset, docW - routeInset);
   state.guide.setAttribute('d', path.d);
   state.samples = path;
   state.total = path.total;
   state.cum = path.wpCum;
+  state.scrolls = buildScrollMap(wps, path, maxScroll);
   buildRanges();
-
-  state.displayLen = targetForY(window.scrollY).len;
-  state.velocity = 0;
 }
 
 // Build the Catmull-Rom path and a dense mathematical arc-length lookup in one pass.
-function catmullRomPath(pts) {
-  if (pts.length < 2) return { d: '', xs: [0], ys: [0], cum: [0], wpCum: [0], total: 0 };
+function catmullRomPath(pts, minX, maxX) {
+  const SUB = 28;
+  if (pts.length < 2) {
+    return { d: '', xs: [0], ys: [0], cum: [0], wpCum: [0], total: 0, subdivisions: SUB };
+  }
   const p = (i) => pts[Math.max(0, Math.min(pts.length - 1, i))];
   let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
-  const SUB = 28;
   const xs = [pts[0].x];
   const ys = [pts[0].y];
   const cum = [0];
@@ -208,8 +227,12 @@ function catmullRomPath(pts) {
 
   for (let i = 0; i < pts.length - 1; i++) {
     const p0 = p(i - 1), p1 = p(i), p2 = p(i + 1), p3 = p(i + 2);
-    const c1x = p1.x + (p2.x - p0.x) / 6, c1y = p1.y + (p2.y - p0.y) / 6;
-    const c2x = p2.x - (p3.x - p1.x) / 6, c2y = p2.y - (p3.y - p1.y) / 6;
+    const lowY = Math.min(p1.y, p2.y);
+    const highY = Math.max(p1.y, p2.y);
+    const c1x = Math.max(minX, Math.min(maxX, p1.x + (p2.x - p0.x) / 6));
+    const c1y = Math.max(lowY, Math.min(highY, p1.y + (p2.y - p0.y) / 6));
+    const c2x = Math.max(minX, Math.min(maxX, p2.x - (p3.x - p1.x) / 6));
+    const c2y = Math.max(lowY, Math.min(highY, p2.y - (p3.y - p1.y) / 6));
     d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
     for (let k = 1; k <= SUB; k++) {
       const t = k / SUB, u = 1 - t;
@@ -224,7 +247,77 @@ function catmullRomPath(pts) {
     }
     wpCum.push(arc);
   }
-  return { d, xs, ys, cum, wpCum, total: arc };
+  return { d, xs, ys, cum, wpCum, total: arc, subdivisions: SUB };
+}
+
+// Allocate enough scroll distance for visible travel while keeping every waypoint
+// inside its safe viewport interval. A backward pass reserves room for later points;
+// the forward pass then stays as close as possible to each scene's authored timing.
+function scheduleWaypointAnchors(waypoints) {
+  let rate = 1.8;
+  let durations = [];
+  let latest = [];
+  for (let attempt = 0; attempt < 24; attempt++) {
+    durations = [0];
+    for (let i = 1; i < waypoints.length; i++) {
+      const from = waypoints[i - 1];
+      const to = waypoints[i];
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
+      const rate2 = rate * rate;
+      const duration = (
+        -dy + Math.sqrt(rate2 * dy * dy + (rate2 - 1) * dx * dx)
+      ) / (rate2 - 1);
+      durations.push(Math.max(4, duration));
+    }
+
+    latest = new Array(waypoints.length);
+    latest[waypoints.length - 1] = waypoints[waypoints.length - 1].latestAnchor;
+    for (let i = waypoints.length - 2; i >= 0; i--) {
+      latest[i] = Math.min(
+        waypoints[i].latestAnchor,
+        latest[i + 1] - durations[i + 1]
+      );
+    }
+    if (latest.every((value, i) => value >= waypoints[i].earliestAnchor - 0.01)) break;
+    rate *= 1.12;
+  }
+
+  waypoints[0].anchor = Math.max(
+    waypoints[0].earliestAnchor,
+    Math.min(latest[0], waypoints[0].preferredAnchor)
+  );
+  for (let i = 1; i < waypoints.length; i++) {
+    const earliest = Math.max(
+      waypoints[i].earliestAnchor,
+      waypoints[i - 1].anchor + durations[i]
+    );
+    waypoints[i].anchor = Math.max(
+      earliest,
+      Math.min(latest[i], waypoints[i].preferredAnchor)
+    );
+  }
+}
+
+// Each curve sample gets a scroll anchor that preserves a safe viewport position.
+// The turtle still moves on the authored curve; only scroll-to-arc timing is adjusted.
+function buildScrollMap(waypoints, path, maxScroll) {
+  const anchors = [waypoints[0]?.anchor || 0];
+  const sub = path.subdivisions;
+  for (let i = 0; i < waypoints.length - 1; i++) {
+    const from = waypoints[i];
+    const to = waypoints[i + 1];
+    const fromViewportY = from.y - from.anchor;
+    const toViewportY = to.y - to.anchor;
+    for (let k = 1; k <= sub; k++) {
+      const t = k / sub;
+      const sampleIndex = i * sub + k;
+      const viewportY = fromViewportY + (toViewportY - fromViewportY) * t;
+      const raw = Math.max(0, Math.min(maxScroll, path.ys[sampleIndex] - viewportY));
+      anchors.push(Math.max(anchors[anchors.length - 1], raw));
+    }
+  }
+  return anchors;
 }
 
 function plateRanges() {
@@ -239,31 +332,12 @@ function plateRanges() {
 
 let ranges = [];
 
-export function updateTurtle(y, dt = 1 / 60) {
+export function updateTurtle(y) {
   if (state.waypoints.length < 2 || !state.samples) return null;
-  const target = targetForY(y).len;
-  const jump = Math.abs(target - state.displayLen);
-  const snapDistance = Math.max(360, window.innerHeight * 0.55);
-
-  if (!Number.isFinite(state.displayLen) || jump > snapDistance) {
-    state.displayLen = target;
-    state.velocity = 0;
-  } else {
-    const step = Math.max(1 / 240, Math.min(dt || 1 / 60, 1 / 30));
-    const delta = target - state.displayLen;
-    const acceleration = SPRING_OMEGA ** 2 * delta - 2 * SPRING_OMEGA * state.velocity;
-    state.velocity += acceleration * step;
-    state.displayLen = Math.max(0, Math.min(state.total, state.displayLen + state.velocity * step));
-    if (Math.abs(delta) < 0.08 && Math.abs(state.velocity) < 0.08) {
-      state.displayLen = target;
-      state.velocity = 0;
-    }
-  }
-
-  const arc = state.displayLen;
+  const arc = targetForY(y).len;
   const pt = pointAtArc(arc);
-  const heading = tangentAt(arc, 14);
-  const curvature = angleDelta(tangentAt(arc + 18, 9), tangentAt(arc - 18, 9));
+  const heading = tangentAt(arc, 52);
+  const curvature = angleDelta(tangentAt(arc + 36, 24), tangentAt(arc - 36, 24));
   const bank = Math.max(-8, Math.min(8, (curvature * 180 / Math.PI) * 0.34));
   const deg = heading * 180 / Math.PI;
   const interval = intervalAtArc(arc);
@@ -271,25 +345,13 @@ export function updateTurtle(y, dt = 1 / 60) {
   const penDown = waypoint.pen === 'down';
   const visible = waypoint.visible !== false;
 
-  // Keep the rendered body in view when distant waypoints, resizing, or fast scrolling
-  // would otherwise place the authored route just outside the viewport.
-  const mobile = document.documentElement.clientWidth < 720;
-  const safeSize = mobile ? 38 : 50;
-  const headerBottom = document.querySelector('.topbar')?.getBoundingClientRect().bottom || 64;
-  const safeX = Math.max(8, Math.min(document.documentElement.clientWidth - safeSize, pt.x));
-  const safeY = Math.max(
-    y + headerBottom + 8,
-    Math.min(y + window.innerHeight - safeSize, pt.y)
-  );
-  state.turtle.style.transform = `translate(${safeX.toFixed(1)}px, ${safeY.toFixed(1)}px) rotate(${deg.toFixed(1)}deg)`;
+  state.turtle.style.transform = `translate(${pt.x.toFixed(1)}px, ${pt.y.toFixed(1)}px) rotate(${deg.toFixed(1)}deg)`;
   state.turtle.classList.toggle('is-visible', visible);
 
-  const speed = Math.min(Math.abs(state.velocity) / 900, 1);
   const phase = arc / 7;
-  const stride = Math.sin(phase) * (0.7 + speed * 0.8);
-  const bob = Math.abs(Math.sin(phase * 0.5)) * (penDown ? 0.25 : 0.65);
-  const stretch = speed * 0.025;
-  state.body.style.transform = `translateY(${bob.toFixed(2)}px) rotate(${bank.toFixed(2)}deg) scale(${(1 + stretch).toFixed(3)}, ${(1 - stretch).toFixed(3)})`;
+  const stride = Math.sin(phase) * 0.9;
+  const sway = Math.sin(phase * 0.5) * (penDown ? 0.18 : 0.4);
+  state.inner.style.transform = `translateY(${sway.toFixed(2)}px) rotate(${bank.toFixed(2)}deg)`;
   state.feet.forEach((foot, i) => {
     const direction = i === 0 || i === 2 ? 1 : -1;
     foot.style.transform = `translateX(${(stride * direction).toFixed(2)}px)`;
@@ -306,8 +368,7 @@ export function updateTurtle(y, dt = 1 / 60) {
     state.plates[k].style.fillOpacity = smooth(seg(y, a, b)).toFixed(3);
   }
 
-  const moving = Math.abs(target - state.displayLen) > 0.08 || Math.abs(state.velocity) > 0.08;
-  return { len: state.displayLen, moving, penDown, visible };
+  return { len: arc, moving: false, penDown, visible };
 }
 
 export function guideInfo() {
@@ -327,12 +388,11 @@ export function initTurtle() {
   state.turtle = document.getElementById('turtle');
   state.inner = document.getElementById('turtle-inner');
   if (!state.layer || !state.guide || !state.turtle || !state.inner) return false;
-  state.body = document.getElementById('turtle-body');
   state.pen = document.getElementById('turtle-pen');
   state.feet = [...state.turtle.querySelectorAll('.turtle-foot')];
   state.plates = [...state.turtle.querySelectorAll('[data-plate]')];
-  state.turtle.classList.add('is-visible');
   measureTurtle();
+  state.turtle.classList.add('is-visible');
   ranges = plateRanges();
   return true;
 }

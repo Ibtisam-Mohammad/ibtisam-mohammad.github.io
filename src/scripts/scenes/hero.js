@@ -34,9 +34,9 @@ export function initHeroScene() {
       { x: u(0.014), y: at(0.3), vy: lineVY, pen: 'down', visible: true },
       { x: u(0.3), y: at(0.48), vy: lineVY, pen: 'down', visible: true },
       { x: u(0.58), y: at(0.68), vy: lineVY, pen: 'up', visible: true },
-      // glide back to the left lane before the section ends, so the visible trail
-      // exits cleanly instead of kinking across the next section's margin drawings
-      { x: r.left - 30, y: at(0.88), pen: 'up', visible: true },
+      // Continue past the underline before lifting the pen; reversing here made the
+      // turtle perform a tight U-turn immediately after the hero drawing.
+      { x: u(0.86), y: at(0.88), pen: 'up', visible: true },
     ];
   });
 
