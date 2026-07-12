@@ -378,20 +378,14 @@ html.anim #turtle-inner.idle #turtle-pen {
 #vine-trail {
   fill: none;
   stroke: var(--ink-soft);
-  stroke-width: 1.5;
+  stroke-width: 1.6;
   stroke-linecap: round;
   stroke-linejoin: round;
-  opacity: 0.42;
-}
-.ink-trail {
-  stroke: var(--ink-soft);
-  stroke-width: 1.55;
-  stroke-linecap: round;
-  opacity: 0.46;
+  opacity: 0.5;
 }
 .vb-stem {
   fill: none;
-  stroke-width: 1.45;
+  stroke-width: 1.6;
   stroke-linecap: round;
 }
 .vb-part {
@@ -400,9 +394,7 @@ html.anim #turtle-inner.idle #turtle-pen {
   opacity: 0;
 }
 @media (max-width: 719px) {
-  #ink-trails,
-  #vine-branches { display: none; }
-  #vine-trail { stroke-width: 1.2; opacity: 0.32; }
+  #vine-trail { stroke-width: 1.35; opacity: 0.42; }
 }
 
 /* ---------- washes (plan.md §7): tinted alpha-mask textures, static once revealed ---------- */
