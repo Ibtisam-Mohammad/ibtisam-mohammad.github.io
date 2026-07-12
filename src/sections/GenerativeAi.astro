@@ -38,6 +38,71 @@ const projects = [
       <p class="lede">Generative systems made useful through conditioning, evaluation, product constraints, and production engineering.</p>
     </header>
 
+    <figure class="gen-system-wrap">
+      <div class="gen-system">
+        <header class="gen-system-head">
+          <div>
+            <p class="mono muted">DressmeAI · production system map</p>
+            <h3>Virtual try-on, from inputs to serving</h3>
+          </div>
+        </header>
+
+        <ol class="gen-system-stages" role="list">
+          <li class="gen-system-stage is-active" style="--stage: var(--cobalt)">
+            <span class="mono stage-num">01 · inputs</span>
+            <svg class="stage-icon" viewBox="0 0 72 72" aria-hidden="true">
+              <circle cx="22" cy="17" r="7" />
+              <path d="M22 24 V46 M22 31 L12 39 M22 31 L32 39 M22 46 L14 61 M22 46 L30 61" />
+              <path d="M47 16 L54 12 L61 16 L68 24 L63 30 L59 27 V59 H43 V27 L39 30 L34 24 Z" />
+            </svg>
+            <strong>Person + garment</strong>
+            <p>Target person and clothing product imagery.</p>
+          </li>
+          <li class="gen-system-stage" style="--stage: var(--leaf)">
+            <span class="mono stage-num">02 · structure</span>
+            <svg class="stage-icon structure-icon" viewBox="0 0 72 72" aria-hidden="true">
+              <circle cx="24" cy="13" r="5" />
+              <path d="M24 19 V38 M24 24 L13 33 M24 24 L36 32 M24 38 L15 57 M24 38 L36 57" />
+              <circle cx="24" cy="24" r="2" /><circle cx="13" cy="33" r="2" /><circle cx="36" cy="32" r="2" />
+              <path class="mask-shape" d="M48 16 C61 11 67 24 62 34 C69 43 62 59 47 57 C38 54 37 42 41 35 C36 28 39 19 48 16 Z" />
+            </svg>
+            <strong>RTMPose + SAM</strong>
+            <p>Full-body keypoints and fine-grained garment masks.</p>
+          </li>
+          <li class="gen-system-stage" style="--stage: var(--violet)">
+            <span class="mono stage-num">03 · generation</span>
+            <svg class="stage-icon" viewBox="0 0 72 72" aria-hidden="true">
+              <path d="M9 49 C18 17 27 61 36 27 C44 4 51 58 64 20" />
+              <circle cx="9" cy="49" r="3" /><circle cx="36" cy="27" r="3" /><circle cx="64" cy="20" r="3" />
+              <path d="M14 61 H58" />
+            </svg>
+            <strong>Automatic1111</strong>
+            <p>Custom diffusion wrappers for try-on and background replacement.</p>
+          </li>
+          <li class="gen-system-stage" style="--stage: var(--ember)">
+            <span class="mono stage-num">04 · production</span>
+            <svg class="stage-icon" viewBox="0 0 72 72" aria-hidden="true">
+              <rect x="8" y="13" width="23" height="17" rx="3" />
+              <rect x="41" y="8" width="23" height="17" rx="3" />
+              <rect x="41" y="39" width="23" height="17" rx="3" />
+              <path d="M31 21 H36 V16 H41 M36 21 V47 H41" />
+              <path d="M48 17 H57 M48 48 H57" />
+            </svg>
+            <strong>Warm GPU serving</strong>
+            <p>Load balancing and instance warmup for traffic spikes.</p>
+          </li>
+        </ol>
+
+        <p class="mono gen-system-output">
+          outputs · outfit visualization · background replacement · realistic human generation
+        </p>
+        <svg class="gen-system-frame" viewBox="0 0 1000 460" preserveAspectRatio="none" aria-hidden="true">
+          <path data-part="frame" data-draw d="M 12 16 C 235 7, 420 18, 620 11 C 760 7, 890 17, 988 13 L 991 444 C 760 451, 552 440, 350 448 C 198 453, 91 443, 10 447 Z" />
+        </svg>
+      </div>
+      <figcaption class="mono muted">System map based on shipped DressmeAI work. Client images remain private.</figcaption>
+    </figure>
+
     <!-- diffusion-trajectory doodle: dots converging along a curve (margin annotation) -->
     <svg class="gen-doodle" viewBox="0 0 110 240" aria-hidden="true">
       <path data-part="curve" data-draw d="M 78 8 C 30 60, 96 120, 55 168 C 40 186, 42 200, 55 212" class="doodle-curve" />
@@ -69,6 +134,81 @@ const projects = [
   .genai { position: relative; overflow: clip; }
   .genai .container { position: relative; z-index: 1; }
 
+  .gen-system-wrap { margin-block: var(--s-6) var(--s-7); }
+  .gen-system {
+    position: relative;
+    background: var(--paper-deep);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+  }
+  .gen-system-head {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: var(--s-4);
+    padding: var(--s-5);
+  }
+  .gen-system-head h3 { margin-top: var(--s-2); }
+  .gen-system-stages {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding: 0;
+    list-style: none;
+    border-block: 1px solid var(--line);
+  }
+  .gen-system-stage {
+    position: relative;
+    min-width: 0;
+    padding: var(--s-5);
+    transition: background-color var(--t-fast) var(--ease);
+  }
+  .gen-system-stage + .gen-system-stage { border-left: 1px solid var(--line); }
+  .gen-system-stage:not(:last-child)::after {
+    content: '→';
+    position: absolute;
+    z-index: 2;
+    top: 50%;
+    right: -11px;
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    color: var(--ink-soft);
+    background: var(--paper-deep);
+    font-family: var(--font-mono);
+  }
+  .gen-system-stage.is-active { background: color-mix(in srgb, var(--stage) 9%, var(--paper-deep)); }
+  .stage-num { display: block; color: var(--stage); margin-bottom: var(--s-3); }
+  .stage-icon {
+    display: block;
+    width: 72px;
+    height: 72px;
+    margin-bottom: var(--s-3);
+    overflow: visible;
+  }
+  .stage-icon path, .stage-icon circle, .stage-icon rect {
+    fill: none;
+    stroke: var(--stage);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .stage-icon circle:not(:first-child) { fill: var(--stage); stroke: none; }
+  .stage-icon .mask-shape { fill: color-mix(in srgb, var(--stage) 15%, transparent); }
+  .gen-system-stage strong { display: block; font-family: var(--font-display); font-size: var(--step-1); }
+  .gen-system-stage p { margin-top: var(--s-2); color: var(--ink-soft); }
+  .gen-system-output { padding: var(--s-4) var(--s-5); color: var(--ink-soft); }
+  .gen-system-frame {
+    position: absolute;
+    inset: -8px;
+    width: calc(100% + 16px);
+    height: calc(100% + 16px);
+    overflow: visible;
+    pointer-events: none;
+  }
+  .gen-system-frame path { fill: none; stroke: var(--ink-soft); stroke-width: 1.5; opacity: 0.45; }
+  .gen-system-wrap figcaption { margin-top: var(--s-3); }
+
   .gen-doodle {
     position: absolute;
     top: 58%; /* beside the cards — on screen when its draw window (s .84+) plays */
@@ -91,5 +231,20 @@ const projects = [
   @media (max-width: 719px) {
     /* mobile wash density ~60%: drop the large field wash */
     .genai .wash:nth-of-type(3) { display: none; }
+    .gen-system-head { display: grid; align-items: start; }
+    .gen-system-stages { grid-template-columns: 1fr; }
+    .gen-system-stage + .gen-system-stage { border-left: 0; border-top: 1px solid var(--line); }
+    .gen-system-stage:not(:last-child)::after {
+      content: '↓';
+      top: auto;
+      right: 50%;
+      bottom: -11px;
+      transform: translateX(50%);
+    }
+    .gen-system-stage { display: grid; grid-template-columns: 72px 1fr; gap: 0 var(--s-4); }
+    .stage-num { grid-column: 1 / -1; }
+    .stage-icon { grid-row: 2 / span 2; margin: 0; }
+    .gen-system-stage strong { align-self: end; }
+    .gen-system-stage p { align-self: start; }
   }
 </style>
