@@ -37,11 +37,6 @@ const yAxisD = `M ${X0} 2 V 112 M ${X0 - 3} 40 H ${X0 + 3} M ${X0 - 3} 70 H ${X0
     </svg>
     <p class="lede thesis">AI engineer and physicist building systems that work beyond the notebook.</p>
     <p class="mono muted roles">Computer vision &middot; generative AI &middot; agents &middot; MLOps</p>
-    <ul class="proof-row" role="list" aria-label="Selected production outcomes">
-      <li><strong>~25 s &rarr; &lt;1 s</strong><span>API latency under load</span></li>
-      <li><strong>&minus;95%</strong><span>server errors under load</span></li>
-      <li><strong>~1 s</strong><span>face-swap inference</span></li>
-    </ul>
     <div class="actions">
       <a class="btn btn-primary" href="#work">View work</a>
       <a class="btn btn-ghost" href="/resume.pdf" download>Download résumé</a>
@@ -100,27 +95,6 @@ const yAxisD = `M ${X0} 2 V 112 M ${X0 - 3} 40 H ${X0 + 3} M ${X0 - 3} 70 H ${X0
     max-width: 34ch;
   }
   .roles { margin-top: var(--s-4); }
-  .proof-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--s-4) var(--s-7);
-    margin-top: var(--s-6);
-    padding: var(--s-4) 0;
-    list-style: none;
-    border-block: 1px solid var(--line-soft);
-    max-width: 720px;
-  }
-  .proof-row li { display: grid; gap: 2px; min-width: 128px; }
-  .proof-row strong {
-    font-family: var(--font-display);
-    font-size: 1.125rem;
-    line-height: 1.2;
-  }
-  .proof-row span {
-    font-family: var(--font-mono);
-    font-size: var(--step--1);
-    color: var(--ink-soft);
-  }
   .actions {
     display: flex;
     flex-wrap: wrap;
@@ -129,7 +103,5 @@ const yAxisD = `M ${X0} 2 V 112 M ${X0 - 3} 40 H ${X0 + 3} M ${X0 - 3} 70 H ${X0
   }
   @media (max-width: 719px) {
     .hero { min-height: 138svh; }
-    .proof-row { gap: var(--s-3) var(--s-5); }
-    .proof-row li { min-width: 104px; }
   }
 </style>

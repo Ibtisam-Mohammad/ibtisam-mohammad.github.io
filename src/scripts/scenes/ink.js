@@ -7,7 +7,6 @@ const BLOCK_SELECTOR = [
   '.hero h1',
   '.hero .thesis',
   '.hero .roles',
-  '.hero .proof-row',
   '.section-head',
   '.prose > p',
   '.card',

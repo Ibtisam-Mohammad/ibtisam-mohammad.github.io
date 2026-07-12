@@ -1,10 +1,6 @@
 ---
-// §10.5 — Generative AI, SIGNATURE 3 of 4, peak paint (level 9).
-// The turtle scribbles noise strokes that resolve — via the §8 noise→structure scrub —
-// into the hero image; a hand-wobbled contour frame completes and settles to 25%; a
-// diffusion-trajectory doodle converges in the margin; violet + rose washes bloom.
-// Finished states (final image, settled frame, revealed washes) are the markup/CSS
-// defaults; the engine rewinds them. Text sits on paper or paper-deep scrims only.
+// §10.5 — Generative AI. A diffusion-trajectory doodle converges in the margin
+// while violet and rose washes bloom around resume-backed project summaries.
 import StrokeHeading from '../components/StrokeHeading.astro';
 
 // Selected work from DressmeAI and Vikara AI.
@@ -13,7 +9,6 @@ const projects = [
     name: 'Outfit visualization in production',
     line: 'AI try-on and background replacement built around Automatic1111 and custom diffusion wrappers, with load balancing and instance warmup for traffic spikes.',
     chips: ['diffusion', 'production'],
-    href: 'https://app.dressmeofficial.com/',
   },
   {
     name: 'Face swap at ~1 s per image',
@@ -27,44 +22,6 @@ const projects = [
   },
 ];
 
-// hand-wobble frame + noise scribbles, generated deterministically at build time
-function mulberry32(seed: number) {
-  let a = seed;
-  return () => {
-    a |= 0; a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-const rand = mulberry32(20260705);
-
-const FW = 1020, FH = 650, M = 10;
-function wobbleRect() {
-  const pts: string[] = [];
-  const step = 42;
-  const w = (v: number) => (v + (rand() - 0.5) * 5).toFixed(1);
-  for (let x = M; x <= FW - M; x += step) pts.push(`${w(x)} ${w(M)}`);
-  for (let y = M; y <= FH - M; y += step) pts.push(`${w(FW - M)} ${w(y)}`);
-  for (let x = FW - M; x >= M; x -= step) pts.push(`${w(x)} ${w(FH - M)}`);
-  for (let y = FH - M; y >= M; y -= step) pts.push(`${w(M)} ${w(y)}`);
-  return `M ${pts[0]} L ${pts.slice(1).join(' L ')} Z`;
-}
-function scribble(cx: number, cy: number, n = 13, step = 30) {
-  let x = cx, y = cy, a = rand() * Math.PI * 2;
-  let d = `M ${x.toFixed(1)} ${y.toFixed(1)}`;
-  for (let i = 0; i < n; i++) {
-    a += (rand() - 0.5) * 2.6;
-    x += Math.cos(a) * step * (0.6 + rand() * 0.8);
-    y += Math.sin(a) * step * (0.6 + rand() * 0.8);
-    x = Math.min(Math.max(x, cx - 130), cx + 130);
-    y = Math.min(Math.max(y, cy - 90), cy + 90);
-    d += ` L ${x.toFixed(1)} ${y.toFixed(1)}`;
-  }
-  return d;
-}
-const frameD = wobbleRect();
-const scribbles = [scribble(790, 130), scribble(860, 240), scribble(730, 200)];
 ---
 <section id="generative" class="section genai" style="--accent: var(--violet)" aria-labelledby="generative-title">
   <!-- washes: margins, gutters, and the section transition only. §7 placement law:
@@ -80,46 +37,6 @@ const scribbles = [scribble(790, 130), scribble(860, 240), scribble(730, 200)];
       <StrokeHeading glyphId="generative-ai" headingId="generative-title" />
       <p class="lede">Generative systems made useful through conditioning, evaluation, product constraints, and production engineering.</p>
     </header>
-
-    <figure class="gen-figure-wrap">
-      <div class="gen-figure">
-        <img class="gen-step gen-step-1" src="/img/gen-step-1.webp" alt="" width="1280" height="800" loading="lazy" decoding="async" />
-        <img class="gen-step gen-step-2" src="/img/gen-step-2.webp" alt="" width="1280" height="800" loading="lazy" decoding="async" />
-        <img class="gen-step gen-step-3" src="/img/gen-step-3.webp" alt="" width="1280" height="800" loading="lazy" decoding="async" />
-        <div class="gen-conditioning" aria-hidden="true">
-          <span class="conditioning-item">
-            <svg viewBox="0 0 36 44">
-              <circle cx="18" cy="6" r="3" />
-              <path d="M18 10 V24 M18 14 L9 21 M18 14 L27 21 M18 24 L11 38 M18 24 L25 38" />
-            </svg>
-            <span>pose</span>
-          </span>
-          <span class="conditioning-plus">+</span>
-          <span class="conditioning-item">
-            <svg viewBox="0 0 44 44">
-              <path class="garment-mask" d="M14 7 L20 4 H24 L30 7 L39 14 L34 21 L30 18 V39 H14 V18 L10 21 L5 14 Z" />
-            </svg>
-            <span>garment mask</span>
-          </span>
-        </div>
-        <ol class="gen-stages" aria-label="Virtual try-on generation stages">
-          <li class="gen-stage" data-stage="0"><span>01</span><strong>noise</strong></li>
-          <li class="gen-stage" data-stage="1"><span>02</span><strong>pose + mask</strong></li>
-          <li class="gen-stage" data-stage="2"><span>03</span><strong>guide</strong></li>
-          <li class="gen-stage is-active" data-stage="3"><span>04</span><strong>output</strong></li>
-        </ol>
-        <img class="gen-step gen-step-4" src="/img/gen-step-4.webp" alt="Abstract diffusion output with layered violet and rose forms under a pale sky" width="1280" height="800" loading="lazy" decoding="async" />
-        <!-- no vector-effect here: non-scaling-stroke makes Chrome measure dashes in
-             screen space while getTotalLength() is user space — the mismatch leaks
-             the path tail through the dash wrap. The ~12% stroke anisotropy from
-             preserveAspectRatio="none" is invisible at 2.25px. -->
-        <svg class="gen-frame" viewBox={`0 0 ${FW} ${FH}`} preserveAspectRatio="none" aria-hidden="true">
-          {scribbles.map((d) => <path data-part="scribble" data-draw d={d} class="gen-scribble" />)}
-          <path data-part="frame" data-draw d={frameD} class="gen-frame-path" />
-        </svg>
-      </div>
-      <figcaption class="mono muted">Try-on pipeline study: latent noise → pose and garment mask → conditioned generation → output. Client generations remain private.</figcaption>
-    </figure>
 
     <!-- diffusion-trajectory doodle: dots converging along a curve (margin annotation) -->
     <svg class="gen-doodle" viewBox="0 0 110 240" aria-hidden="true">
@@ -142,7 +59,6 @@ const scribbles = [scribble(790, 130), scribble(860, 240), scribble(730, 200)];
           <ul class="chip-row" role="list">
             {p.chips.map((c) => <li class="chip">{c}</li>)}
           </ul>
-          {p.href && <p class="mono proj-link"><a href={p.href}>visit the product →</a></p>}
         </li>
       ))}
     </ul>
@@ -152,121 +68,6 @@ const scribbles = [scribble(790, 130), scribble(860, 240), scribble(730, 200)];
 <style>
   .genai { position: relative; overflow: clip; }
   .genai .container { position: relative; z-index: 1; }
-
-  .gen-figure-wrap { margin-block: var(--s-6); }
-  .gen-figure {
-    position: relative;
-    aspect-ratio: 1280 / 800;
-    border-radius: var(--radius-lg);
-    background: var(--paper-deep);
-  }
-  .gen-step {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: var(--radius-lg);
-    opacity: 0;
-  }
-  .gen-step-4 { opacity: 1; } /* finished state: the resolved image */
-  .gen-conditioning {
-    position: absolute;
-    z-index: 2;
-    top: var(--s-4);
-    right: var(--s-4);
-    display: flex;
-    align-items: center;
-    gap: var(--s-3);
-    padding: 9px 12px;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: var(--scrim);
-  }
-  .conditioning-item {
-    display: grid;
-    grid-template-columns: 36px auto;
-    align-items: center;
-    gap: 6px;
-    font-family: var(--font-mono);
-    font-size: var(--step--1);
-    color: var(--ink);
-  }
-  .conditioning-item svg { width: 32px; height: 36px; overflow: visible; }
-  .conditioning-item svg circle,
-  .conditioning-item svg path {
-    fill: none;
-    stroke: var(--violet);
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-  .conditioning-item .garment-mask {
-    fill: color-mix(in srgb, var(--rose-wash) 26%, var(--paper));
-    stroke: var(--rose-wash);
-  }
-  .conditioning-plus { font-family: var(--font-mono); color: var(--ink-soft); }
-  .gen-stages {
-    position: absolute;
-    z-index: 2;
-    left: var(--s-4);
-    right: var(--s-4);
-    bottom: var(--s-4);
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    padding: 0;
-    list-style: none;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    overflow: hidden;
-    background: var(--scrim);
-  }
-  .gen-stage {
-    display: grid;
-    gap: 2px;
-    min-width: 0;
-    padding: 9px 12px;
-    opacity: 0.58;
-    transition: opacity var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease);
-  }
-  .gen-stage + .gen-stage { border-left: 1px solid var(--line); }
-  .gen-stage span,
-  .gen-stage strong {
-    overflow-wrap: anywhere;
-    font-family: var(--font-mono);
-    font-size: var(--step--1);
-    line-height: 1.25;
-  }
-  .gen-stage span { color: var(--ink-soft); }
-  .gen-stage strong { font-weight: 500; }
-  .gen-stage.is-active {
-    opacity: 1;
-    background: color-mix(in srgb, var(--violet) 12%, var(--paper));
-  }
-  .gen-frame {
-    position: absolute;
-    inset: -12px;
-    width: calc(100% + 24px);
-    height: calc(100% + 24px);
-    overflow: visible;
-    pointer-events: none;
-  }
-  .gen-frame-path {
-    stroke: var(--ink);
-    stroke-width: 2.25;
-    fill: none;
-    stroke-linejoin: round;
-    opacity: 0.25; /* finished state: contours fade to ~25% and remain */
-  }
-  .gen-scribble {
-    stroke: var(--ink-soft);
-    stroke-width: 1.75;
-    fill: none;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    opacity: 0; /* finished state: scribbles have dissolved into the image */
-  }
-  .gen-figure-wrap figcaption { margin-top: var(--s-3); }
 
   .gen-doodle {
     position: absolute;
@@ -290,14 +91,5 @@ const scribbles = [scribble(790, 130), scribble(860, 240), scribble(730, 200)];
   @media (max-width: 719px) {
     /* mobile wash density ~60%: drop the large field wash */
     .genai .wash:nth-of-type(3) { display: none; }
-    .gen-conditioning {
-      top: var(--s-3);
-      right: var(--s-3);
-      transform: scale(0.82);
-      transform-origin: top right;
-    }
-    .gen-stages { left: var(--s-2); right: var(--s-2); bottom: var(--s-2); }
-    .gen-stage { padding: 6px; }
-    .gen-stage span { display: none; }
   }
 </style>
