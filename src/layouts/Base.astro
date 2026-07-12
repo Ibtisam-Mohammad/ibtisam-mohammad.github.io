@@ -8,10 +8,12 @@ import TurtleOverlay from '../components/TurtleOverlay.astro';
 interface Props {
   title?: string;
   description?: string;
+  ogType?: 'website' | 'article';
 }
 const {
   title = 'Ibtisam | AI Engineer and Physicist',
   description = 'Portfolio of Ibtisam, an AI engineer and physicist building production computer vision, generative AI, agentic workflows, and MLOps systems.',
+  ogType = 'website',
 } = Astro.props;
 ---
 <!doctype html>
@@ -24,7 +26,7 @@ const {
     <meta name="theme-color" content="#FCF8EF" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={ogType} />
     <meta property="og:url" content={new URL(Astro.url.pathname, Astro.site)} />
     <meta property="og:image" content={new URL('/og.png', Astro.site)} />
     <meta property="og:image:width" content="1200" />

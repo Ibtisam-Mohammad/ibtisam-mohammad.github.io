@@ -1,0 +1,129 @@
+---
+import Base from '../../layouts/Base.astro';
+import TurtleMark from '../../components/TurtleMark.astro';
+import { notes, type Note } from '../../data/notes';
+
+export function getStaticPaths() {
+  return notes.map((note) => ({ params: { slug: note.slug }, props: { note } }));
+}
+
+interface Props { note: Note }
+const { note } = Astro.props;
+const index = notes.findIndex((item) => item.slug === note.slug);
+const next = notes[(index + 1) % notes.length];
+const sectionId = (heading: string) => heading.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+---
+<Base title={`${note.title} | Ibtisam`} description={note.dek} ogType="article">
+  <article class="note-page" style={`--accent: var(--${note.accent})`}>
+    <header class="note-hero">
+      <div class="container note-hero-inner">
+        <p class="mono muted breadcrumb"><a href="/#notes">Notes</a> / {note.kind}</p>
+        <div class="note-title-row">
+          <div>
+            <h1>{note.title}</h1>
+            <p class="lede">{note.dek}</p>
+          </div>
+          <div class="note-mark" aria-hidden="true"><TurtleMark size={58} /></div>
+        </div>
+        <div class="note-meta">
+          <ul class="chip-row" role="list">
+            {note.tags.map((tag) => <li class="chip" style={`--accent: var(--${tag.a})`}>{tag.t}</li>)}
+          </ul>
+          <a class="mono source-link" href={note.sourceUrl}>{note.sourceLabel} ↗</a>
+        </div>
+        <svg class="note-trail" viewBox="0 0 1000 90" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M 4 65 C 150 18, 246 82, 378 46 S 632 26, 760 55 S 900 74, 996 28" />
+        </svg>
+      </div>
+    </header>
+
+    <div class="container note-layout">
+      <aside class="note-index" aria-label="On this page">
+        <p class="mono muted">On this page</p>
+        <ol>
+          {note.sections.map((section) => <li><a href={`#${sectionId(section.heading)}`}>{section.heading}</a></li>)}
+        </ol>
+      </aside>
+
+      <div class="note-body">
+        {note.sections.map((section) => (
+          <section id={sectionId(section.heading)}>
+            <h2>{section.heading}</h2>
+            {section.blocks.map((block) => {
+              if (block.type === 'p') return <p>{block.text}</p>;
+              if (block.type === 'list') return <ul>{block.items.map((item) => <li>{item}</li>)}</ul>;
+              if (block.type === 'code') return (
+                <div class="code-wrap">
+                  <span class="mono code-lang">{block.language}</span>
+                  <pre><code>{block.code}</code></pre>
+                </div>
+              );
+              return (
+                <aside class="callout">
+                  <p class="mono callout-title">{block.title}</p>
+                  <p>{block.text}</p>
+                </aside>
+              );
+            })}
+          </section>
+        ))}
+
+        <nav class="note-next" aria-label="Continue reading">
+          <span class="mono muted">Next note</span>
+          <a href={`/notes/${next.slug}/`}>{next.title} →</a>
+        </nav>
+      </div>
+    </div>
+  </article>
+</Base>
+
+<style>
+  .note-page { overflow: clip; }
+  .note-hero { padding-block: var(--s-8) var(--s-5); border-bottom: 1px solid var(--line); }
+  .breadcrumb { margin-bottom: var(--s-5); }
+  .note-title-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--s-6); align-items: center; }
+  .note-title-row h1 { max-width: 15ch; font-size: clamp(2.5rem, 2rem + 2.2vw, 4.5rem); }
+  .note-title-row .lede { max-width: 58ch; margin-top: var(--s-4); }
+  .note-mark { color: var(--accent); padding-right: var(--s-5); }
+  .note-meta { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--s-4); margin-top: var(--s-6); }
+  .source-link { font-size: var(--step--1); }
+  .note-trail { display: block; width: 100%; height: 70px; margin-top: var(--s-5); overflow: visible; }
+  .note-trail path { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; opacity: 0.75; }
+
+  .note-layout { display: grid; grid-template-columns: 190px minmax(0, 720px); justify-content: center; gap: var(--s-8); padding-block: var(--s-8); }
+  .note-index { position: sticky; top: 96px; align-self: start; }
+  .note-index > p { margin-bottom: var(--s-3); }
+  .note-index ol { display: grid; gap: var(--s-2); padding-left: 1.25rem; color: var(--ink-soft); }
+  .note-index a { color: inherit; font-size: 0.9375rem; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+
+  .note-body { min-width: 0; }
+  .note-body section { scroll-margin-top: 96px; }
+  .note-body section + section { margin-top: var(--s-8); padding-top: var(--s-6); border-top: 1px solid var(--line-soft); }
+  .note-body h2 { font-size: var(--step-3); margin-bottom: var(--s-4); }
+  .note-body p, .note-body li { font-size: var(--step-0); line-height: 1.65; }
+  .note-body p + p, .note-body p + ul, .note-body ul + p, .note-body .callout + p { margin-top: var(--s-4); }
+  .note-body ul:not(.chip-row) { display: grid; gap: var(--s-2); padding-left: 1.35em; margin-top: var(--s-4); }
+  .note-body li::marker { color: var(--accent); }
+
+  .callout { margin-block: var(--s-5); padding: var(--s-4) 0 var(--s-4) var(--s-5); border-left: 3px solid var(--accent); }
+  .callout-title { color: var(--accent); font-size: var(--step--1) !important; margin-bottom: var(--s-2); }
+  .code-wrap { position: relative; margin-block: var(--s-5); }
+  .code-lang { position: absolute; top: var(--s-3); right: var(--s-4); color: var(--ink-soft); font-size: 0.6875rem; }
+  pre { max-width: 100%; overflow-x: auto; padding: var(--s-6) var(--s-5) var(--s-5); border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper-deep); }
+  code { font-family: var(--font-mono); font-size: 0.8125rem; line-height: 1.65; }
+
+  .note-next { display: grid; gap: var(--s-2); margin-top: var(--s-8); padding-top: var(--s-6); border-top: 2px solid var(--accent); }
+  .note-next a { font-family: var(--font-display); font-weight: 600; font-size: var(--step-2); max-width: 26ch; }
+
+  @media (max-width: 719px) {
+    .note-hero { padding-top: var(--s-6); }
+    .note-title-row { grid-template-columns: 1fr; }
+    .note-mark { display: none; }
+    .note-meta { align-items: flex-start; }
+    .source-link { width: 100%; }
+    .note-layout { grid-template-columns: 1fr; padding-block: var(--s-6); }
+    .note-index { position: static; padding-bottom: var(--s-5); border-bottom: 1px solid var(--line-soft); }
+    .note-index ol { grid-template-columns: 1fr 1fr; gap: var(--s-2) var(--s-4); }
+    pre { margin-inline: calc(-1 * var(--s-2)); padding-inline: var(--s-4); }
+  }
+</style>

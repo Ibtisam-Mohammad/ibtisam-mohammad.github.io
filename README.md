@@ -70,7 +70,8 @@ public/resume.pdf           public résumé download
 ## Private and illustrative content
 
 The copy, links, metrics, and case studies are backed by the public GitHub profile and current
-résumé. Client imagery is intentionally represented by privacy-safe illustrations.
+résumé. Seven project notes are published as static pages under `/notes/`. Client imagery is
+intentionally represented by privacy-safe illustrations.
 
 | Item | Where | Replace with |
 |---|---|---|

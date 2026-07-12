@@ -12,11 +12,12 @@ import { initVisionScene } from './scenes/vision.js';
 import { initSectionScenes, initNotesInteractive } from './scenes/sections.js';
 
 const anim = document.documentElement.classList.contains('anim');
+const hasStory = Boolean(document.getElementById('hero'));
 
 // This filtering interaction is functional and remains available with reduced motion.
 initNotesInteractive();
 
-if (anim) {
+if (anim && hasStory) {
   // Scenes register their local turtle choreography before the document path is measured.
   performance.mark('b0');
   initHeroScene();
