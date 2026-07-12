@@ -15,29 +15,47 @@ export function initHeroScene() {
   const dot = svg.querySelector('[data-part="dot"]');
   preparePaths(svg);
 
-  // turtle: pen drops at the origin, rides the sine to its resolution, exits pen-up.
-  // The hero content is PINNED (sticky): waypoints descend through document space at
-  // scroll speed (y = span*t + viewport offset) with `vy` holding the turtle at the
-  // drawing's viewport height — so it appears to glide along the pinned sine.
+  // Sample the rendered path itself so the sticky turtle follows every crest and
+  // trough during the same scroll interval that reveals the sine stroke.
   registerWaypoints('hero', (rect) => {
     const vh = window.innerHeight;
-    const span = Math.max(rect.height - vh, 1); // scroll distance the pin holds
+    const span = Math.max(rect.height - vh, 1);
     const r = svg.getBoundingClientRect();
-    // viewport y of the sine line while pinned: current position, corrected if we
-    // measured after the pin released (sticky content scrolls normally past `span`).
-    // The axis/underline sits at y=18 of the 120-unit viewBox: 15% of svg height.
-    const lineVY = r.top + r.height * 0.15 + Math.max(0, window.scrollY - span);
-    const u = (fx) => r.left + r.width * fx;
-    // document y that renders at lineVY when scrollY = span * t
-    const at = (t) => span * t + lineVY;
-    return [
-      { x: u(0.014), y: at(0.3), vy: lineVY, pen: 'down', visible: true },
-      { x: u(0.3), y: at(0.48), vy: lineVY, pen: 'down', visible: true },
-      { x: u(0.58), y: at(0.68), vy: lineVY, pen: 'up', visible: true },
-      // Continue past the underline before lifting the pen; reversing here made the
-      // turtle perform a tight U-turn immediately after the hero drawing.
-      { x: u(0.86), y: at(0.88), pen: 'up', visible: true },
-    ];
+    const matrix = sine.getScreenCTM();
+    const length = sine.getTotalLength();
+    const releaseCorrection = Math.max(0, window.scrollY - span);
+    const sampleCount = 28;
+    const points = [];
+
+    for (let index = 0; index <= sampleCount; index++) {
+      const fraction = index / sampleCount;
+      const local = sine.getPointAtLength(length * fraction);
+      const screen = matrix
+        ? new DOMPoint(local.x, local.y).matrixTransform(matrix)
+        : {
+            x: r.left + r.width * local.x / 1000,
+            y: r.top + r.height * local.y / 120,
+          };
+      const viewportY = screen.y + releaseCorrection;
+      const scrollAnchor = span * (0.28 + 0.38 * fraction);
+      points.push({
+        x: screen.x,
+        y: scrollAnchor + viewportY,
+        vy: viewportY,
+        scrollAnchor,
+        lockAnchor: true,
+        pen: index === sampleCount ? 'up' : 'down',
+        visible: true,
+      });
+    }
+
+    points.push({
+      x: r.left + r.width * 0.86,
+      y: span * 0.88 + points.at(-1).vy,
+      pen: 'up',
+      visible: true,
+    });
+    return points;
   });
 
   addScene({

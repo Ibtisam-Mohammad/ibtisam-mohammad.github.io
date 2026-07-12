@@ -194,8 +194,8 @@ export function measureTurtle() {
     const earliest = Math.max(0, Math.min(maxScroll, w.y - safeBottom));
     const latest = Math.max(0, Math.min(maxScroll, w.y - safeTop));
     w.preferredAnchor = Math.max(earliest, Math.min(latest, preferred));
-    w.earliestAnchor = earliest;
-    w.latestAnchor = latest;
+    w.earliestAnchor = w.lockAnchor ? w.preferredAnchor : earliest;
+    w.latestAnchor = w.lockAnchor ? w.preferredAnchor : latest;
   }
   scheduleWaypointAnchors(wps);
 
