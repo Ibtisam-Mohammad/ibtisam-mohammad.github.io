@@ -9,28 +9,28 @@ import { mulberry32, wobbleRect } from '../lib/draw.mjs';
 
 const rand = mulberry32(20260714);
 
-// real work (résumé-level detail; richer case data may follow)
+// Selected work from the resume and public GitHub projects.
 const projects = [
   {
-    name: 'Multi-stream CCTV security service',
-    line: 'A real-time detection microservice (YOLOv11, DETR) watching many camera streams at once — integrated with plate, face, and mask recognition, plus DINO-embedding checks for camera movement and obstruction.',
-    chips: ['detection', 'streaming'],
+    name: 'Multi-stream CCTV security',
+    line: 'A FastAPI detection service using YOLOv11 and DETR across concurrent camera streams, integrated with plate, face, and mask recognition.',
+    chips: ['detection', 'streaming', 'FastAPI'],
   },
   {
     name: 'Pose from partial bodies',
-    line: 'RTMPose fine-tuned to produce full-body keypoints — hands and limbs included — from partial-body inputs, alongside SAM fine-tuned for fine-grained garment segmentation.',
+    line: 'RTMPose fine-tuned to recover full-body keypoints, including hands and limbs, from partial-body inputs; paired with SAM garment segmentation.',
     chips: ['pose estimation', 'fine-tuning'],
   },
   {
     name: 'Vehicle wait-time detection',
-    line: 'Detection and tracking inside drawn regions of interest to measure how long vehicles actually wait.',
+    line: 'A public detection and tracking pipeline that measures vehicle dwell time inside a predefined region of interest.',
     chips: ['tracking', 'open source'],
     href: 'https://github.com/Ibtisam-Mohammad/Vehicle_Wait_Time_Detector',
   },
 ];
 
 // detections in cv-scene.webp coordinates (1280x853): the defect, then a healthy part
-const BOX1 = { x: 596, y: 352, w: 214, h: 172, label: 'defect 0.97' };
+const BOX1 = { x: 596, y: 352, w: 214, h: 172, label: 'object 0.97' };
 const BOX2 = { x: 136, y: 414, w: 330, h: 202, label: 'part 0.88' };
 const box1D = wobbleRect(BOX1.x, BOX1.y, BOX1.w, BOX1.h, rand, { step: 46, amp: 5 });
 const box2D = wobbleRect(BOX2.x, BOX2.y, BOX2.w, BOX2.h, rand, { step: 52, amp: 5 });
@@ -69,7 +69,7 @@ const bones: [string, string][] = [
           <img
             class="cv-img"
             src="/img/cv-scene.webp"
-            alt="Inspection line with three machined parts on a conveyor; the middle part carries a highlighted surface defect — placeholder for a real detection frame"
+            alt="Stylized conveyor scene with two object-detection boxes and confidence labels"
             width="1280" height="853" loading="lazy" decoding="async"
           />
           <div class="cv-seg" aria-hidden="true"></div>
@@ -86,14 +86,14 @@ const bones: [string, string][] = [
             </g>
           </svg>
         </div>
-        <figcaption class="mono muted">Detection output. <span class="placeholder-tag">stylized recreation — client footage stays private</span></figcaption>
+        <figcaption class="mono muted">Object-detection study · illustrative scene; client footage remains private.</figcaption>
       </figure>
 
       <figure class="cv-pose-wrap">
         <div class="cv-pose">
           <img
             src="/img/cv-pose.webp"
-            alt="Stylized figure mid-stride — placeholder for a real pose-estimation frame"
+            alt="Stylized walking figure with a full-body pose skeleton and keypoints"
             width="1000" height="750" loading="lazy" decoding="async"
           />
           <svg class="pose-svg" viewBox="0 0 1000 750" preserveAspectRatio="none" aria-hidden="true">
@@ -104,7 +104,7 @@ const bones: [string, string][] = [
             {Object.values(J).map(([x, y]) => <circle data-pop class="pose-joint" cx={x} cy={y} r="8" />)}
           </svg>
         </div>
-        <figcaption class="mono muted">Keypoints over a stride. <span class="placeholder-tag">stylized recreation</span></figcaption>
+        <figcaption class="mono muted">Full-body keypoint reconstruction · illustrative scene.</figcaption>
       </figure>
     </div>
 

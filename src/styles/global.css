@@ -241,17 +241,6 @@ main { position: relative; z-index: var(--z-content); }
 }
 .chip-row { display: flex; flex-wrap: wrap; gap: var(--s-2); padding: 0; list-style: none; }
 
-.placeholder-tag {
-  display: inline-block;
-  padding: 2px 8px;
-  border: 1px dashed color-mix(in srgb, var(--ink) 35%, transparent);
-  border-radius: 6px;
-  font-family: var(--font-mono);
-  font-size: var(--step--1);
-  letter-spacing: 0.04em;
-  color: var(--ink-soft);
-}
-
 /* ---------- cards ---------- */
 .card {
   background: var(--paper-deep);
@@ -268,18 +257,6 @@ main { position: relative; z-index: var(--z-content); }
 }
 @media (min-width: 1024px) {
   .cols-3 { grid-template-columns: repeat(3, 1fr); }
-}
-
-/* ---------- placeholder visuals (aspect reserved -> zero CLS, plan.md §8) ---------- */
-.visual-placeholder {
-  display: grid;
-  place-items: center;
-  background: var(--paper-deep);
-  border: 1px dashed color-mix(in srgb, var(--ink) 30%, transparent);
-  border-radius: var(--radius-lg);
-  color: var(--ink-soft);
-  text-align: center;
-  padding: var(--s-4);
 }
 
 /* ---------- stats ---------- */

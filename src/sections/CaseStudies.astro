@@ -9,37 +9,40 @@ import { mulberry32, wobbleRect } from '../lib/draw.mjs';
 
 const rand = mulberry32(20260715);
 
-// PLACEHOLDER case studies — realistic but fake; figures are illustrative, not claims
+// Resume-backed client work. Illustrations are privacy-safe reconstructions, not screenshots.
 const cases = [
   {
-    name: 'Defect detection at line speed',
-    problem: 'Manual inspection missed micro-defects at 2 m/s belt speed; slowing the line cost more than the defects did.',
-    approach: 'Anchor-free detector distilled to run on line-side hardware. Hard-negative mining against six months of logged false alarms. Recall tuned against a fixed false-positive budget.',
-    result: 'Critical-defect recall up 31 points at the same false-positive rate.',
-    resultChips: ['+31 pts recall', 'same FP rate'],
-    stack: ['PyTorch', 'TensorRT', 'OpenCV', 'Grafana'],
+    name: 'Multi-stream video security service',
+    problem: 'A camera-security product needed real-time detection across multiple CCTV streams while combining plate, face, and mask recognition under production load.',
+    approach: 'Built a FastAPI microservice around YOLOv11 and DETR, integrated the recognition services, and added DINO-embedding checks for camera movement and obstruction. Reworked Nginx and service concurrency around the measured bottlenecks.',
+    result: 'Reduced API latency from roughly 25 seconds to under one second and cut server errors by 95% under high load.',
+    resultChips: ['~25 s → <1 s', '−95% errors'],
+    stack: ['FastAPI', 'YOLOv11', 'DETR', 'DINO', 'Nginx'],
     shot: '/img/shot-detection.webp',
-    shotAlt: 'Detection dashboard mockup with bounding boxes and metric panels — placeholder screenshot',
+    shotAlt: 'Illustrated video analytics dashboard with detection boxes, charts, and service metrics',
+    availability: 'private client system',
   },
   {
-    name: 'Grounded assistant for support teams',
-    problem: 'Support answers lived in 4,000 pages of versioned docs; agents averaged eight minutes per lookup.',
-    approach: 'Retrieval with citation-required generation. Nightly evals on a frozen question set. A refusal path for thin evidence, so wrong-but-confident answers never ship.',
-    result: 'Median lookup time down from eight minutes to 40 seconds, every answer citing its source.',
-    resultChips: ['8 min → 40 s', 'cited answers'],
-    stack: ['Python', 'pgvector', 'FastAPI', 'LLM API'],
+    name: 'AI assistant for Microsoft Project',
+    problem: 'Project teams needed natural-language analysis over live schedules without losing the structure of tasks, dependencies, Gantt workflows, and MPP or XML files.',
+    approach: 'Built the full-stack Microsoft Project add-in with Office.js, authenticated FastAPI endpoints, MongoDB, streaming chat, file handling, schedule reasoning, observability, graph-based evaluation, and end-to-end tests.',
+    result: 'Delivered an integrated assistant that could analyze schedule context, handle project files, and support conversational task and Gantt workflows inside Microsoft Project.',
+    resultChips: ['full-stack add-in', 'evaluated workflows'],
+    stack: ['Office.js', 'FastAPI', 'MongoDB', 'LLM services'],
     shot: '/img/shot-assistant.webp',
-    shotAlt: 'Assistant chat interface mockup with cited answers — placeholder screenshot',
+    shotAlt: 'Illustrated project assistant interface with a task list and contextual chat',
+    availability: 'private client system',
   },
   {
-    name: 'Forecast platform, re-platformed',
-    problem: 'Twelve business-critical forecasts ran as un-versioned notebooks on a single VM.',
-    approach: 'Containerized pipelines with a model registry, backtesting gates in CI, and automatic rollback on drift. Owners kept their notebooks for research; production got a contract.',
-    result: 'Retrain cadence moved from quarterly to weekly; zero manual deploys in the last two quarters.',
-    resultChips: ['quarterly → weekly', '0 manual deploys'],
-    stack: ['Docker', 'MLflow', 'Prefect', 'Postgres'],
+    name: 'AI-assisted class rescheduling',
+    problem: 'Students who missed a class needed a faster path back into the schedule than a manual support exchange.',
+    approach: 'Built an SMS workflow that contacts affected students and hands the conversation to an AI chatbot for self-service rescheduling and class questions, connected through messaging, background jobs, and CRM workflows.',
+    result: 'The workflow achieved a 25% click-through rate and converted 14% of contacted students into bookings.',
+    resultChips: ['25% CTR', '14% booking conversion'],
+    stack: ['Twilio', 'LLM', 'background queues', 'CRM'],
     shot: '/img/shot-pipeline.webp',
-    shotAlt: 'Pipeline monitoring dashboard mockup with stage graph and drift chart — placeholder screenshot',
+    shotAlt: 'Illustrated messaging workflow with automation stages and outcome monitoring',
+    availability: 'private client system',
   },
 ];
 
@@ -55,14 +58,14 @@ const TAPE_BR = 'M 462 344 L 516 290 L 540 314 L 486 368 Z';
       title="Selected case studies"
       headingId="work-title"
       glyphId="work"
-      lede="Problem, approach, result — with the metric up front."
+      lede="Three shipped systems, described with the problem, engineering approach, and outcomes I can substantiate."
     />
     <div class="case-list">
       {cases.map((c, i) => (
         <article class="card cs-card">
           <header class="cs-head">
             <h3>{c.name}</h3>
-            <span class="placeholder-tag">placeholder</span>
+            <span class="mono muted cs-availability">{c.availability}</span>
           </header>
           <dl class="cs-rows">
             <div class="cs-row">
@@ -101,7 +104,7 @@ const TAPE_BR = 'M 462 344 L 516 290 L 540 314 L 486 368 Z';
               </svg>
             </div>
           </figure>
-          <p class="mono muted cs-link">full write-up — [CASE_STUDY_URL]</p>
+          <p class="mono muted cs-link">Privacy-safe illustration; implementation details are limited by client confidentiality.</p>
         </article>
       ))}
     </div>
@@ -132,6 +135,7 @@ const TAPE_BR = 'M 462 344 L 516 290 L 540 314 L 486 368 Z';
     gap: var(--s-4);
     margin-bottom: var(--s-5);
   }
+  .cs-availability { white-space: nowrap; }
   .cs-rows { display: grid; gap: var(--s-4); margin: 0; }
   .cs-row {
     display: grid;

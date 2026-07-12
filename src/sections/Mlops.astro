@@ -1,6 +1,5 @@
 ---
-// §10.6 — Production MLOps: "color, disciplined". Static pipeline diagram (the finished state
-// that Phase 3 animates as a turtle drawing) + placeholder stat chips, clearly marked.
+// §10.6 — Production MLOps: pipeline and verified outcomes from production work.
 import SectionHeader from '../components/SectionHeader.astro';
 ---
 <section id="mlops" class="section" style="--accent: var(--ember)" aria-labelledby="mlops-title">
@@ -10,14 +9,15 @@ import SectionHeader from '../components/SectionHeader.astro';
       title="MLOps &amp; production"
       headingId="mlops-title"
       glyphId="mlops"
-      lede="A model is a liability until it is deployed, observed, and cheap to retrain. I build the part that makes it an asset."
+      lede="A useful model must also be deployable, observable, reproducible, and economical to operate."
     />
     <div class="prose">
       <p>
-        Docker, AWS, Nginx, DVC, MLflow, CVAT — continuous training and evaluation
-        pipelines that take detection models from data to deployment, and the discipline
-        to roll back. The palette collected above gets contained here: color inside the
-        shapes, nothing loose.
+        I have built continuous training and evaluation workflows for object detection,
+        connected custom YOLOv11 models to CVAT for auto-annotation, versioned data with
+        DVC, tracked experiments with MLflow, and deployed containerized services on AWS.
+        Production work has also meant tuning Nginx, managing warm instances, and designing
+        services that remain responsive under concurrent load.
       </p>
     </div>
 
@@ -114,7 +114,7 @@ import SectionHeader from '../components/SectionHeader.astro';
         <span class="stat-label">face-swap inference, per image</span>
       </li>
     </ul>
-    <p class="mono muted stat-note">measured on production services, 2023–2025.</p>
+    <p class="mono muted stat-note">Selected outcomes from production systems at DwarfAI and DressmeAI.</p>
   </div>
 </section>
 

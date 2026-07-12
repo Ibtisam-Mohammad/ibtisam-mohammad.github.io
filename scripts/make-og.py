@@ -1,6 +1,5 @@
-"""OG image (plan.md §15 Phase 5): 1200x630, the painted turtle beside the name and
-thesis on warm paper, with a soft violet wash behind. Regenerate after replacing
-[OWNER_NAME]: python scripts/make-og.py  (fonts are derived from the shipped woff2).
+"""OG image: 1200x630, the painted turtle beside the name and positioning on warm
+paper. Run with python scripts/make-og.py; fonts are derived from the shipped woff2.
 """
 import math
 from pathlib import Path
@@ -71,11 +70,11 @@ serif = ImageFont.truetype(str(CACHE / f"{FACES['serif']}.ttf"), 40)
 mono = ImageFont.truetype(str(CACHE / f"{FACES['mono']}.ttf"), 26)
 
 d.text((84, 168), "Ibtisam", font=display, fill=INK)
-d.text((86, 300), "I build AI systems", font=serif, fill=SOFT)
-d.text((86, 352), "from first principles.", font=serif, fill=SOFT)
+d.text((86, 300), "AI engineer & physicist", font=serif, fill=SOFT)
+d.text((86, 352), "building production systems.", font=serif, fill=SOFT)
 for i, c in enumerate(ACCENTS):
     d.ellipse([86 + i * 40, 452, 110 + i * 40, 476], fill=c)
-d.text((86, 508), "physics · machine learning · production", font=mono, fill=SOFT)
+d.text((86, 508), "vision · generative AI · agents · MLOps", font=mono, fill=SOFT)
 
 # no grain: flat fills keep the PNG small, and OG thumbnails hide texture anyway
 img.save(ROOT / "public" / "og.png", optimize=True)

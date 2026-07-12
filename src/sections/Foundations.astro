@@ -15,23 +15,22 @@ const cards = [
   {
     name: 'Mechanics',
     tex: String.raw`S[q] = \int_{t_0}^{t_1} L(q, \dot{q}, t)\, dt`,
-    line: 'Dynamics as optimization: the path taken is the one that extremizes a functional.',
+    line: 'Variational thinking trained me to turn system behaviour into objectives, constraints, and measurable outcomes.',
   },
   {
     name: 'Linear algebra',
     tex: String.raw`A = U \Sigma V^{\top}`,
-    line: 'Every dataset is a geometry; the spectrum tells you what the data can support.',
+    line: 'The geometry behind embeddings, image features, and model representations is often the shortest path to a useful diagnosis.',
   },
   {
     name: 'Probability',
     tex: String.raw`p(\theta \mid x) = \frac{p(x \mid \theta)\, p(\theta)}{p(x)}`,
-    line: 'Uncertainty is a first-class quantity, updated honestly as evidence arrives.',
+    line: 'Evaluation is evidence: confidence, uncertainty, and failure cases matter more than a single headline score.',
   },
   {
     name: 'Optimization',
     tex: String.raw`\theta_{t+1} = \theta_t - \eta\, \nabla_{\theta} \mathcal{L}(\theta_t)`,
-    line: 'How learning actually happens: follow the gradient, respect the step size.',
-    annotated: true,
+    line: 'Training is an iterative system: follow the gradient, respect the step size, and inspect what the loss leaves out.',
   },
 ];
 
@@ -87,41 +86,29 @@ const descentD = `M ${steps.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).j
     <SectionHeader num="02" title="Physics &amp; mathematics" headingId="foundations-title" glyphId="foundations" />
     <div class="prose">
       <p>
-        My route into machine learning ran through theoretical nuclear physics — a master's
-        spent on systems nobody can observe directly, where every claim rides on the
-        mathematics being right. It shows in how I work: I want the model class written
-        down, the assumptions explicit, and the failure modes named before anything ships.
+        I studied physics at the Central University of Kashmir, completing a BSc in 2018
+        and an MSc in 2020 with a specialization in theoretical nuclear physics. That
+        training shaped how I approach machine learning: define the system, make the
+        assumptions visible, and test where the model stops matching reality.
       </p>
       <p>
-        Physics teaches a specific kind of taste — prefer the smallest system that still
-        explains the data, and treat every metric as a measurement with error bars rather
-        than a scoreboard.
+        Since moving into AI engineering, I have carried that discipline into camera
+        systems, diffusion pipelines, LLM evaluation, and the infrastructure that keeps
+        them reliable under production load.
       </p>
       <p>
-        The four tools below do most of the work. Everything later on this page — vision
-        models, generative systems, production pipelines — is these four, applied with care.
+        These four ideas are the bridge between my physics background and the systems I
+        build now. They are not decoration; they guide model choice, debugging, and evaluation.
       </p>
       <p class="mono muted edu-line">
-        MSc Physics, Central University of Kashmir · theoretical nuclear physics
+        MSc Physics, 2020 · BSc Physics, 2018 · Central University of Kashmir
       </p>
     </div>
     <ul class="cols-2 foundation-grid" role="list">
       {cards.map((c) => (
         <li class="card foundation-card">
           <h3>{c.name}</h3>
-          {c.annotated ? (
-            <div class="eq-wrap">
-              <span class="eq-note mono" aria-hidden="true">respect the step size</span>
-              <Equation tex={c.tex} />
-              <svg class="eq-annotate" viewBox="0 0 340 100" aria-hidden="true">
-                <path data-draw class="ann-marker" d="M 168 74 C 210 82, 272 82, 320 74" />
-                <ellipse data-draw class="ann-ring" cx="160" cy="52" rx="18" ry="15" />
-                <path data-draw class="ann-arrow" d="M 172 38 C 204 16, 244 10, 284 14 M 284 14 l -11 -5 M 284 14 l -12 4" />
-              </svg>
-            </div>
-          ) : (
-            <Equation tex={c.tex} />
-          )}
+          <Equation tex={c.tex} />
           <p class="muted">{c.line}</p>
         </li>
       ))}
@@ -158,26 +145,6 @@ const descentD = `M ${steps.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).j
     color: var(--ink-soft);
   }
   .foundation-card .muted { font-size: var(--step-0); }
-
-  .eq-wrap { position: relative; }
-  .eq-annotate {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    overflow: visible;
-  }
-  .ann-marker { stroke: var(--marker); stroke-width: 7; stroke-linecap: round; fill: none; opacity: 0.75; }
-  .ann-ring { stroke: var(--ink); stroke-width: 1.75; fill: none; }
-  .ann-arrow { stroke: var(--ink-soft); stroke-width: 1.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-  .eq-note {
-    position: absolute;
-    top: -4px;
-    right: 0;
-    color: var(--ink-soft);
-    font-size: var(--step--1);
-  }
 
   .fnd-contours {
     margin: var(--s-8) auto calc(-1 * var(--s-6));

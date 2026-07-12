@@ -10,16 +10,20 @@ const rand = mulberry32(20260713);
 
 const groups = [
   {
-    name: 'Deep learning',
-    skills: ['PyTorch', 'TensorFlow', 'Hugging Face', 'scikit-learn'],
+    name: 'Vision & generative models',
+    skills: ['YOLOv11', 'DETR', 'SAM', 'DINO', 'RTMPose', 'Stable Diffusion', 'ControlNet'],
   },
   {
-    name: 'LLM systems',
-    skills: ['LangGraph', 'Langfuse', 'Deepeval', 'sentence-transformers', 'Ollama'],
+    name: 'LLM systems & evaluation',
+    skills: ['LangGraph', 'Langfuse', 'Deepeval', 'Sentence-Transformers'],
   },
   {
-    name: 'Backend & tooling',
-    skills: ['Python', 'FastAPI', 'Docker', 'Git', 'Linux'],
+    name: 'Backend & infrastructure',
+    skills: ['Python', 'FastAPI', 'MongoDB', 'Docker', 'AWS', 'Nginx', 'Linux'],
+  },
+  {
+    name: 'ML lifecycle',
+    skills: ['TensorFlow', 'scikit-learn', 'DVC', 'MLflow', 'CVAT', 'CI/CD'],
   },
 ];
 
@@ -57,13 +61,13 @@ const hullB = wobbleEllipse(888, 198, 56, 40, rand, { wobble: 0.06, rot: 0.2 });
       title="AI &amp; machine learning"
       headingId="ml-title"
       glyphId="ml"
-      lede="The full stack of learning: why a method generalizes, how to make it train, and what it costs to run."
+      lede="Models, evaluation, APIs, and infrastructure: the full path from an experiment to a working product."
     />
     <div class="prose">
       <p>
-        Three years of taking models from notebook to production. Theory earns its keep
-        here — it is how you debug a model you cannot print — but so does the unglamorous
-        stack around it: the API, the queue, the reverse proxy nobody else wants to read.
+        Since 2023, I have worked across production computer vision, generative AI, and
+        LLM products. The job rarely ends at model quality: it also includes data tooling,
+        evaluation, authenticated APIs, queues, reverse proxies, observability, and cost.
       </p>
     </div>
 
@@ -98,6 +102,28 @@ const hullB = wobbleEllipse(888, 198, 56, 40, rand, { wobble: 0.06, rot: 0.2 });
         </div>
       ))}
     </div>
+
+    <div class="experience">
+      <h3>Experience</h3>
+      <ol class="experience-list" role="list">
+        <li>
+          <p><strong>AI Engineer · Vikara AI</strong><span class="mono muted">Jan 2026 — present</span></p>
+          <p class="muted">Consulting on LLM-driven campaign management, messaging automation, CRM workflows, and AI-assisted class rescheduling.</p>
+        </li>
+        <li>
+          <p><strong>Machine Learning Engineer · DwarfAI</strong><span class="mono muted">Sep 2024 — Dec 2025</span></p>
+          <p class="muted">Built computer-vision services, continuous model workflows, LLM evaluation systems, and a full-stack AI assistant for Microsoft Project.</p>
+        </li>
+        <li>
+          <p><strong>Machine Learning Engineer / Founding Engineer · DressmeAI</strong><span class="mono muted">Apr 2023 — Sep 2024</span></p>
+          <p class="muted">Shipped virtual try-on, garment segmentation, pose estimation, face swap, and scalable diffusion infrastructure.</p>
+        </li>
+        <li>
+          <p><strong>AI Consultant · Univ.AI</strong><span class="mono muted">Feb 2023 — Jul 2023</span></p>
+          <p class="muted">Developed a reproducible finance ML pipeline using DVC, Poetry, Docker, and scalable deployment practices.</p>
+        </li>
+      </ol>
+    </div>
   </div>
 </section>
 
@@ -114,4 +140,18 @@ const hullB = wobbleEllipse(888, 198, 56, 40, rand, { wobble: 0.06, rot: 0.2 });
 
   .groups { margin-top: var(--s-6); display: grid; gap: var(--s-6); }
   .group h3 { font-size: 1.0625rem; font-weight: 500; margin-bottom: var(--s-3); }
+  .experience { margin-top: var(--s-8); }
+  .experience > h3 { margin-bottom: var(--s-4); }
+  .experience-list { padding: 0; list-style: none; border-top: 1px solid var(--line-soft); }
+  .experience-list li { padding-block: var(--s-4); border-bottom: 1px solid var(--line-soft); }
+  .experience-list li > p:first-child {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--s-4);
+    align-items: baseline;
+  }
+  .experience-list li > p + p { margin-top: var(--s-2); max-width: 72ch; }
+  @media (max-width: 719px) {
+    .experience-list li > p:first-child { display: grid; gap: var(--s-1); }
+  }
 </style>

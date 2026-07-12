@@ -29,7 +29,7 @@ A scroll-driven, turtle-graphics portfolio for an AI/ML engineer with a physics 
 
 ## Deploy
 
-Any static host. `dist/` is the site. Netlify reads [public/_headers](public/_headers) for caching (translate for Vercel/Pages). Before launch: set the real URL in `astro.config.mjs` + `public/robots.txt`, replace the placeholder table below, rerun `python scripts/make-og.py`, and rebuild.
+Any static host. `dist/` is the site. Netlify reads [public/_headers](public/_headers) for caching (translate for Vercel/Pages). The configured canonical host is `https://ibtisam-mohammad.github.io`; rerun `python scripts/make-og.py` after changing the public identity or social preview design.
 
 ## Run it
 
@@ -64,22 +64,16 @@ src/
   styles/tokens.css         the design tokens (single source of truth)
   styles/global.css         fonts, reset, typography, layout, utilities
 public/fonts/               woff2, subset per §6
-public/resume.pdf           PLACEHOLDER — replace with the real résumé
+public/resume.pdf           public résumé download
 ```
 
-## Placeholders — replace before launch (plan.md §11)
+## Private and illustrative content
 
-Most owner content is now real (branch `content/ibtisam`): name, physics narrative, ML stack,
-vision/generative project cards (résumé-level, no client names), MLOps stats, seven notes
-(three linking to the live Small Diary), and contact links. Still pending:
+The copy, links, metrics, and case studies are backed by the public GitHub profile and current
+résumé. Client imagery is intentionally represented by privacy-safe illustrations.
 
 | Item | Where | Replace with |
 |---|---|---|
-| `[LINKEDIN_URL]` | `src/sections/Contact.astro` | Real LinkedIn profile URL |
-| `public/resume.pdf` | stub PDF | The real résumé PDF (also update the "PDF · one page" caption if two pages) |
-| 3 case studies + `[CASE_STUDY_URL]` | `src/sections/CaseStudies.astro` | Real CCTV/PPE/BookMyShow write-ups on the Problem → Approach → Result template, when the owner supplies the data |
-| `[SITE_URL]` (`https://example.com`) | `astro.config.mjs`, `public/robots.txt` | Production URL (then rebuild for sitemap/canonical/OG URLs) |
 | Headshot | not yet placed | Optional — receives the contour-first reveal (§8) if supplied |
 | Signature | `src/sections/Contact.astro` (generated single-stroke) | Optional `SIGNATURE_SVG` — swap the two paths + dot inside `.signature` |
 | Project imagery | `public/img/cv-*.webp`, `shot-*.webp` | Stylized recreations by design (client work is private); swap only if shareable assets appear |
-| Unpublished notes (year-only dates) | `src/sections/NotesGarden.astro` | Publish to the Small Diary and add `href`s |
