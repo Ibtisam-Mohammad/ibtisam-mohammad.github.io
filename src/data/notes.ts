@@ -21,6 +21,7 @@ export interface Note {
   title: string;
   kind: string;
   dek: string;
+  published: string;
   accent: Accent;
   tags: NoteTag[];
   sourceUrl: string;
@@ -31,6 +32,7 @@ export interface Note {
 export const notes: Note[] = [
   {
     slug: 'fara-7b-on-12gb-vram',
+    published: '2026-07-13',
     title: 'Fitting a 7B agent into 12 GB of VRAM',
     kind: 'field note',
     dek: 'Running a vision-language computer-use agent locally by splitting GPU inference on Windows from browser automation in WSL.',
@@ -80,6 +82,7 @@ export const notes: Note[] = [
   },
   {
     slug: 'voice-driven-point-of-sale',
+    published: '2026-07-13',
     title: 'Voice-driven point of sale',
     kind: 'project note',
     dek: 'Turning spoken orders and photographed receipts into structured operations without confusing an AI interpretation with a completed transaction.',
@@ -120,6 +123,7 @@ export const notes: Note[] = [
   },
   {
     slug: 'vehicle-wait-time-detector',
+    published: '2026-07-13',
     title: 'Vehicle wait-time detector',
     kind: 'project note',
     dek: 'Why dwell-time measurement is a tracking and state-management problem after the detector has drawn its first box.',
@@ -160,6 +164,7 @@ export const notes: Note[] = [
   },
   {
     slug: 'yolov11-auto-annotation-cvat',
+    published: '2026-07-13',
     title: 'YOLOv11 auto-annotation for CVAT',
     kind: 'project note',
     dek: 'Wrapping a custom detector in CVAT’s serverless contract so model predictions become editable annotations rather than a separate pipeline.',
@@ -200,6 +205,7 @@ export const notes: Note[] = [
   },
   {
     slug: 'ai-support-refund-agent',
+    published: '2026-07-13',
     title: 'AI support refund agent',
     kind: 'project note',
     dek: 'A tool-calling support agent where the language model can investigate and explain, but a deterministic policy engine owns every financial verdict.',
@@ -246,6 +252,7 @@ export const notes: Note[] = [
   },
   {
     slug: 'open-resources-defence-systems',
+    published: '2026-07-13',
     title: 'Open resources for defence systems',
     kind: 'research note',
     dek: 'Building a navigable map of open and public tools across unmanned systems, sensing, geospatial intelligence, communications, simulation, and command-and-control.',
@@ -286,6 +293,7 @@ export const notes: Note[] = [
   },
   {
     slug: 'multimodal-emotion-recognition',
+    published: '2026-07-13',
     title: 'Multimodal emotion recognition',
     kind: 'project note',
     dek: 'Combining facial-expression signals with speech transcription and sentence sentiment on a shared timeline for audience-reaction analysis.',

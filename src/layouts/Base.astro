@@ -9,12 +9,17 @@ interface Props {
   title?: string;
   description?: string;
   ogType?: 'website' | 'article';
+  structuredData?: Record<string, unknown>;
 }
 const {
-  title = 'Ibtisam | AI Engineer and Physicist',
-  description = 'Portfolio of Ibtisam, an AI engineer and physicist building production computer vision, generative AI, agentic workflows, and MLOps systems.',
+  title = 'Ibtisam Mohammad | AI Engineer and Physicist',
+  description = 'Portfolio of Ibtisam Mohammad, an AI engineer and physicist building production computer vision, generative AI, agentic workflows, and MLOps systems.',
   ogType = 'website',
+  structuredData,
 } = Astro.props;
+const serializedStructuredData = structuredData
+  ? JSON.stringify(structuredData).replace(/</g, '\\u003c')
+  : undefined;
 ---
 <!doctype html>
 <html lang="en">
@@ -33,6 +38,9 @@ const {
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+    {serializedStructuredData && (
+      <script type="application/ld+json" set:html={serializedStructuredData} />
+    )}
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="preload" href="/fonts/bricolage-grotesque-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/source-serif-4-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />

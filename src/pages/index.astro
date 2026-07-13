@@ -9,8 +9,76 @@ import Mlops from '../sections/Mlops.astro';
 import CaseStudies from '../sections/CaseStudies.astro';
 import NotesGarden from '../sections/NotesGarden.astro';
 import Contact from '../sections/Contact.astro';
+
+const siteUrl = new URL('/', Astro.site).href;
+const personId = `${siteUrl}#person`;
+const websiteId = `${siteUrl}#website`;
+const profilePageId = `${siteUrl}#profile-page`;
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      '@id': websiteId,
+      url: siteUrl,
+      name: 'Ibtisam Mohammad',
+      description: 'Portfolio and technical notes of AI engineer and physicist Ibtisam Mohammad.',
+      inLanguage: 'en',
+      publisher: { '@id': personId },
+    },
+    {
+      '@type': 'ProfilePage',
+      '@id': profilePageId,
+      url: siteUrl,
+      name: 'Ibtisam Mohammad | AI Engineer and Physicist',
+      description: 'Portfolio of Ibtisam Mohammad, covering production computer vision, generative AI, agentic workflows, and MLOps systems.',
+      isPartOf: { '@id': websiteId },
+      mainEntity: { '@id': personId },
+      inLanguage: 'en',
+    },
+    {
+      '@type': 'Person',
+      '@id': personId,
+      name: 'Ibtisam Mohammad',
+      alternateName: 'Ibtisam',
+      url: siteUrl,
+      email: 'mailto:ibtisam115@gmail.com',
+      jobTitle: 'AI Engineer',
+      description: 'AI engineer and physicist building production computer vision, generative AI, agentic workflows, and MLOps systems.',
+      worksFor: {
+        '@type': 'Organization',
+        name: 'Vikara AI',
+      },
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: 'Srinagar',
+        addressRegion: 'Jammu and Kashmir',
+        addressCountry: 'IN',
+      },
+      knowsAbout: [
+        'Artificial intelligence',
+        'Machine learning',
+        'Computer vision',
+        'Generative artificial intelligence',
+        'AI agents',
+        'Machine learning operations',
+        'Physics',
+        'Mathematics',
+      ],
+      sameAs: [
+        'https://github.com/Ibtisam-Mohammad',
+        'https://www.linkedin.com/in/ibtim/',
+      ],
+      subjectOf: {
+        '@type': 'DigitalDocument',
+        name: 'Ibtisam Mohammad resume',
+        url: new URL('/resume.pdf', Astro.site).href,
+      },
+    },
+  ],
+};
 ---
-<Base>
+<Base structuredData={structuredData}>
   <Hero />
   <Foundations />
   <MlCore />
