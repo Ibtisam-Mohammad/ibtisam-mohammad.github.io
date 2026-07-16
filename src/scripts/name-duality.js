@@ -128,8 +128,8 @@ export function initNameDuality() {
     const { particles, glyphs, width, height, pad, ink, progress, phase } = state;
     const eased = smooth(progress);
     const centerY = pad + height / 2;
-    const waveAmplitude = Math.max(1.4, height * 0.022);
-    const lateralAmplitude = Math.max(0.45, height * 0.007);
+    const waveAmplitude = Math.max(0.55, height * 0.008);
+    const lateralAmplitude = Math.max(0.12, height * 0.0018);
 
     context.clearRect(0, 0, width + pad * 2, height + pad * 2);
     context.globalAlpha = clamp01(progress * 2.8);
@@ -140,12 +140,12 @@ export function initNameDuality() {
       if (!glyph) continue;
       const glyphPhase = glyph.index * 0.82;
       const localY = (particle.y - centerY) / Math.max(height / 2, 1);
-      const wave = Math.sin(particle.localX * TAU * 1.15 - phase * 1.6 + glyphPhase);
-      const vibration = Math.sin(phase * 3.5 + particle.seed * TAU + glyphPhase) * 0.32;
-      const lateral = Math.sin(localY * Math.PI + phase * 1.8 + glyphPhase) * lateralAmplitude;
+      const wave = Math.sin(particle.localX * TAU * 1.15 - phase * 1.2 + glyphPhase);
+      const vibration = Math.sin(phase * 2.2 + particle.seed * TAU + glyphPhase) * 0.08;
+      const lateral = Math.sin(localY * Math.PI + phase * 1.2 + glyphPhase) * lateralAmplitude;
       const x = particle.x + (lateral + vibration * 0.35) * eased;
       const y = particle.y + (wave * waveAmplitude + vibration) * eased;
-      const pulse = 0.97 + 0.06 * (0.5 + 0.5 * Math.sin(phase * 2.4 + particle.seed * TAU));
+      const pulse = 0.995 + 0.01 * (0.5 + 0.5 * Math.sin(phase * 1.5 + particle.seed * TAU));
 
       context.beginPath();
       context.arc(x, y, particle.radius * pulse, 0, TAU);
@@ -162,7 +162,7 @@ export function initNameDuality() {
     state.lastTime = time;
     const response = state.destination > state.progress ? 7.5 : 9;
     state.progress += (state.destination - state.progress) * (1 - Math.exp(-response * elapsed));
-    state.phase += elapsed * 1.15;
+    state.phase += elapsed * 0.65;
     render();
 
     if (state.destination === 0 && state.progress < 0.002) {
