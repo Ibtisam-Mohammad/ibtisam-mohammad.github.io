@@ -26,10 +26,11 @@ function registerSectionWaypoints() {
     const figure = document.querySelector('.fnd-contours svg');
     const r = documentBox(figure);
     return spread([
+      { x: r.right + 18, y: r.top + 12, pen: 'up', visible: true },
       { x: r.left + r.width * 0.86, y: r.top + r.height * 0.2, pen: 'down', visible: true },
       { x: r.left + r.width * 0.66, y: r.top + r.height * 0.43, pen: 'down', visible: true },
       { x: r.left + r.width * 0.5, y: r.top + r.height * 0.58, pen: 'down', visible: true },
-      { x: r.left - 18, y: r.top + r.height + 18, pen: 'up', visible: true },
+      { x: r.right + 18, y: r.top + r.height + 18, pen: 'up', visible: true },
     ], r.top - vh * 0.95, r.top - vh * 0.45);
   });
 

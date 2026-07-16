@@ -168,13 +168,12 @@ const [endX, endY] = optimizerSvgSteps.at(-1)!;
             <circle class="optimizer-start-halo" r="15" />
             <circle class="optimizer-start-dot" r="6" />
           </g>
-          <g class="optimizer-turtle" data-opt-turtle transform={`translate(${endX.toFixed(1)} ${endY.toFixed(1)})`} aria-hidden="true">
-            <path d="M -8 0 H -12 M 7 -4 L 13 0 L 7 4 Z M -4 -5 L -7 -8 M -4 5 L -7 8 M 4 -5 L 7 -8 M 4 5 L 7 8" />
-            <circle cx="0" cy="0" r="7" />
-            <path d="M 0 0 L 5 -4 M 0 0 L 5 4 M 0 0 L -6 0" />
+          <g class="optimizer-end" data-opt-end transform={`translate(${endX.toFixed(1)} ${endY.toFixed(1)})`} aria-hidden="true">
+            <circle class="optimizer-end-halo" r="7" />
+            <circle class="optimizer-end-dot" r="3" />
           </g>
-          <text class="optimizer-axis-label" x="574" y="169">theta 1</text>
-          <text class="optimizer-axis-label" x="329" y="43">theta 2</text>
+          <text class="optimizer-axis-label" x="558" y="169">&#952;&#8321;</text>
+          <text class="optimizer-axis-label" x="329" y="43">&#952;&#8322;</text>
         </svg>
       </div>
 
@@ -197,7 +196,8 @@ const [endX, endY] = optimizerSvgSteps.at(-1)!;
         <button class="optimizer-reset" type="button" data-opt-reset aria-label="Reset optimizer" title="Reset optimizer" disabled>&#8634;</button>
       </div>
       <figcaption class="mono muted optimizer-caption">
-        L(theta) = 0.55 theta1^2 + 1.15 theta2^2 + 0.35 theta1 theta2. The same objective can converge, oscillate, or diverge as the update rule and step size change.
+        <i>L</i>(&theta;) = 0.55&theta;<sub>1</sub><sup>2</sup> + 1.15&theta;<sub>2</sub><sup>2</sup> + 0.35&theta;<sub>1</sub>&theta;<sub>2</sub>.
+        The same objective can converge, oscillate, or diverge as the update rule and step size change.
       </figcaption>
     </figure>
   </div>
@@ -238,7 +238,7 @@ const [endX, endY] = optimizerSvgSteps.at(-1)!;
     gap: var(--s-4);
     margin-bottom: var(--s-3);
   }
-  .optimizer-heading h3 { font-size: var(--step-2); }
+  .optimizer-heading h3 { font-size: 1.25rem; }
   .optimizer-kicker {
     color: var(--cobalt);
     margin-bottom: var(--s-1);
@@ -303,13 +303,12 @@ const [endX, endY] = optimizerSvgSteps.at(-1)!;
     stroke: var(--ink);
     stroke-width: 2;
   }
-  .optimizer-turtle {
-    fill: var(--paper);
-    stroke: var(--ink);
-    stroke-width: 1.5;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+  .optimizer-end-halo {
+    fill: color-mix(in srgb, var(--cobalt) 12%, transparent);
+    stroke: color-mix(in srgb, var(--cobalt) 38%, transparent);
+    stroke-width: 1;
   }
+  .optimizer-end-dot { fill: var(--ink); }
   .optimizer-axis-label {
     fill: var(--ink-soft);
     font: 11px var(--font-mono);
@@ -332,12 +331,12 @@ const [endX, endY] = optimizerSvgSteps.at(-1)!;
   .segmented-control {
     display: inline-grid;
     grid-auto-flow: column;
-    border: 1px solid var(--line-strong);
+    border: 1px solid color-mix(in srgb, var(--ink) 28%, transparent);
     border-radius: var(--radius);
     overflow: hidden;
   }
   .segmented-control label { position: relative; cursor: pointer; }
-  .segmented-control label + label { border-left: 1px solid var(--line-strong); }
+  .segmented-control label + label { border-left: 1px solid color-mix(in srgb, var(--ink) 28%, transparent); }
   .segmented-control input {
     position: absolute;
     opacity: 0;
@@ -367,25 +366,36 @@ const [endX, endY] = optimizerSvgSteps.at(-1)!;
   }
   .optimizer-range.is-disabled { opacity: 0.45; }
   .optimizer-reset {
+    display: grid;
+    place-items: center;
     width: 44px;
     height: 44px;
-    border: 1px solid var(--line-strong);
+    border: 1px solid color-mix(in srgb, var(--ink) 28%, transparent);
     border-radius: var(--radius);
     color: var(--ink);
     background: var(--paper);
     cursor: pointer;
     font-size: 1.25rem;
+    line-height: 1;
   }
   .optimizer-reset:hover { background: var(--paper-deep); }
-  .optimizer-caption { margin-top: var(--s-3); }
+  .optimizer-caption {
+    margin-top: var(--s-3);
+    font-style: normal;
+  }
+  .optimizer-caption sub,
+  .optimizer-caption sup { font-size: 0.75em; }
 
   @media (max-width: 719px) {
     .optimizer-heading { align-items: start; flex-direction: column; }
+    .optimizer-heading h3 { font-size: 1.125rem; }
     .optimizer-status { text-align: left; }
     .optimizer-controls { grid-template-columns: 1fr 44px; }
     .optimizer-modes { grid-column: 1 / -1; }
     .optimizer-range { grid-column: 1 / -1; }
     .optimizer-reset { grid-column: 2; grid-row: 4; }
+    .optimizer-controls,
+    .optimizer-caption { margin-right: 36px; }
     .optimizer-stage svg { aspect-ratio: 4 / 3; }
     .optimizer-axis-label { font-size: 20px; }
   }

@@ -10,7 +10,7 @@ function initOptimizerLab() {
   const path = root.querySelector('[data-opt-path]');
   const stepsLayer = root.querySelector('[data-opt-steps]');
   const startHandle = root.querySelector('[data-opt-start]');
-  const turtle = root.querySelector('[data-opt-turtle]');
+  const endpoint = root.querySelector('[data-opt-end]');
   const status = root.querySelector('[data-opt-status]');
   const rateInput = root.querySelector('[data-opt-rate-input]');
   const momentumInput = root.querySelector('[data-opt-momentum-input]');
@@ -20,7 +20,7 @@ function initOptimizerLab() {
   const reset = root.querySelector('[data-opt-reset]');
   const modes = [...root.querySelectorAll('input[name="optimizer"]')];
 
-  if (!svg || !path || !stepsLayer || !startHandle || !turtle || !rateInput || !momentumInput) return;
+  if (!svg || !path || !stepsLayer || !startHandle || !endpoint || !rateInput || !momentumInput) return;
 
   const plot = { cx: 320, cy: 178, sx: 88, sy: 72 };
   const defaults = { start: [2.5, -1.55], rate: 0.14, momentum: 0.68, mode: 'momentum' };
@@ -67,17 +67,17 @@ function initOptimizerLab() {
       dot.setAttribute('cx', x.toFixed(1));
       dot.setAttribute('cy', y.toFixed(1));
       dot.setAttribute('r', index % 2 === 0 ? '2.5' : '2');
+      // Runtime SVG nodes do not receive Astro's scoped-style attribute.
+      dot.style.fill = 'var(--cobalt)';
       return dot;
     }));
 
     const [startX, startY] = svgPoints[0];
     const [endX, endY] = svgPoints.at(-1);
-    const [previousX, previousY] = svgPoints.at(-2) || svgPoints[0];
-    const angle = Math.atan2(endY - previousY, endX - previousX) * 180 / Math.PI;
     startHandle.setAttribute('transform', `translate(${startX.toFixed(1)} ${startY.toFixed(1)})`);
     startHandle.setAttribute('aria-valuenow', start[0].toFixed(2));
     startHandle.setAttribute('aria-valuetext', `x ${start[0].toFixed(2)}, y ${start[1].toFixed(2)}`);
-    turtle.setAttribute('transform', `translate(${endX.toFixed(1)} ${endY.toFixed(1)}) rotate(${angle.toFixed(1)})`);
+    endpoint.setAttribute('transform', `translate(${endX.toFixed(1)} ${endY.toFixed(1)})`);
 
     rateOutput.textContent = rate.toFixed(2);
     momentumOutput.textContent = momentum.toFixed(2);
