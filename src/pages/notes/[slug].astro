@@ -11,6 +11,16 @@ interface Props { note: Note }
 const { note } = Astro.props;
 const index = notes.findIndex((item) => item.slug === note.slug);
 const next = notes[(index + 1) % notes.length];
+const noteTags = new Set(note.tags.map((tag) => tag.t));
+const related = notes
+  .filter((item) => item.slug !== note.slug)
+  .map((item) => ({
+    note: item,
+    shared: item.tags.filter((tag) => noteTags.has(tag.t)).map((tag) => tag.t),
+  }))
+  .filter((item) => item.shared.length > 0)
+  .sort((a, b) => b.shared.length - a.shared.length)
+  .slice(0, 3);
 const sectionId = (heading: string) => heading.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 const siteUrl = new URL('/', Astro.site).href;
 const noteUrl = new URL(`/notes/${note.slug}/`, Astro.site).href;
@@ -55,6 +65,7 @@ const structuredData = {
         url: siteUrl,
       },
       citation: note.sourceUrl,
+      isRelatedTo: related.map(({ note: item }) => new URL(`/notes/${item.slug}/`, Astro.site).href),
     },
     {
       '@type': 'BreadcrumbList',
@@ -137,6 +148,21 @@ const structuredData = {
           </section>
         ))}
 
+        {related.length > 0 && (
+          <aside class="related-notes" aria-labelledby="related-notes-title">
+            <p class="mono muted">Follow the concepts</p>
+            <h2 id="related-notes-title">Related notes</h2>
+            <ul role="list">
+              {related.map(({ note: item, shared }) => (
+                <li>
+                  <a href={`/notes/${item.slug}/`}>{item.title}</a>
+                  <span class="mono muted">shares {shared.join(' + ')}</span>
+                </li>
+              ))}
+            </ul>
+          </aside>
+        )}
+
         <nav class="note-next" aria-label="Continue reading">
           <span class="mono muted">Next note</span>
           <a href={`/notes/${next.slug}/`}>{next.title} →</a>
@@ -182,6 +208,24 @@ const structuredData = {
   pre { max-width: 100%; overflow-x: auto; padding: var(--s-6) var(--s-5) var(--s-5); border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper-deep); }
   code { font-family: var(--font-mono); font-size: 0.8125rem; line-height: 1.65; }
 
+  .related-notes {
+    margin-top: var(--s-8);
+    padding-block: var(--s-6);
+    border-block: 1px solid var(--line);
+  }
+  .related-notes > h2 { margin-top: var(--s-1); }
+  .related-notes ul { display: grid; padding: 0 !important; margin-top: 0 !important; list-style: none; }
+  .related-notes li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--s-3);
+    align-items: baseline;
+    padding-block: var(--s-3);
+  }
+  .related-notes li + li { border-top: 1px solid var(--line-soft); }
+  .related-notes a { font-family: var(--font-display); font-weight: 600; }
+  .related-notes span { font-size: var(--step--1); text-align: right; }
+
   .note-next { display: grid; gap: var(--s-2); margin-top: var(--s-8); padding-top: var(--s-6); border-top: 2px solid var(--accent); }
   .note-next a { font-family: var(--font-display); font-weight: 600; font-size: var(--step-2); max-width: 26ch; }
 
@@ -194,6 +238,8 @@ const structuredData = {
     .note-layout { grid-template-columns: 1fr; padding-block: var(--s-6); }
     .note-index { position: static; padding-bottom: var(--s-5); border-bottom: 1px solid var(--line-soft); }
     .note-index ol { grid-template-columns: 1fr 1fr; gap: var(--s-2) var(--s-4); }
+    .related-notes li { grid-template-columns: 1fr; }
+    .related-notes span { text-align: left; }
     pre { margin-inline: calc(-1 * var(--s-2)); padding-inline: var(--s-4); }
   }
 </style>

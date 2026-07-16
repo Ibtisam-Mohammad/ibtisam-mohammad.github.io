@@ -52,23 +52,34 @@ for (let r = 0; r < 5; r++) {
   }
 }
 
-// contour rings + a gradient-descent path stepping into the minimum
-const CX = 240, CY = 148;
-const contours = [150, 112, 76, 42].map((rx, i) =>
-  wobbleEllipse(CX, CY, rx, rx * 0.6, rand, { wobble: 0.045, rot: -0.2, points: 34 })
+// An anisotropic quadratic gives the drawing real optimizer behaviour while the
+// hand-wobbled contours keep it in the site's notebook language.
+const OPT = { cx: 320, cy: 178, sx: 88, sy: 72 };
+const contours = [255, 203, 151, 101, 54].map((rx) =>
+  wobbleEllipse(OPT.cx, OPT.cy, rx, rx * 0.55, rand, { wobble: 0.035, rot: -0.2, points: 40 })
 );
-let px2 = 408, py2 = 46;
-const steps: [number, number][] = [[px2, py2]];
-for (let k = 0; k < 8; k++) {
-  const toC = [CX - px2, CY - py2];
-  const m = Math.hypot(...toC) || 1;
-  const perp = (k % 2 ? 1 : -1) * (26 * (1 - k / 9));
-  px2 += (toC[0] / m) * m * 0.3 + (-toC[1] / m) * perp;
-  py2 += (toC[1] / m) * m * 0.3 + (toC[0] / m) * perp;
-  steps.push([px2, py2]);
-}
-steps.push([CX, CY]);
-const descentD = `M ${steps.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join(' L ')}`;
+const toSvg = ([x, y]: [number, number]) => [OPT.cx + x * OPT.sx, OPT.cy - y * OPT.sy] as [number, number];
+const simulate = (start: [number, number], rate = 0.14, momentum = 0.68, count = 22) => {
+  let [x, y] = start;
+  let vx = 0;
+  let vy = 0;
+  const result: [number, number][] = [[x, y]];
+  for (let i = 0; i < count; i++) {
+    const gx = 1.1 * x + 0.35 * y;
+    const gy = 2.3 * y + 0.35 * x;
+    vx = momentum * vx + gx;
+    vy = momentum * vy + gy;
+    x -= rate * vx;
+    y -= rate * vy;
+    result.push([x, y]);
+  }
+  return result;
+};
+const optimizerSteps = simulate([2.5, -1.55]);
+const optimizerSvgSteps = optimizerSteps.map(toSvg);
+const descentD = `M ${optimizerSvgSteps.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join(' L ')}`;
+const [startX, startY] = optimizerSvgSteps[0];
+const [endX, endY] = optimizerSvgSteps.at(-1)!;
 ---
 <section id="foundations" class="section" style="--accent: var(--cobalt)" aria-labelledby="foundations-title">
   <div class="container">
@@ -114,14 +125,80 @@ const descentD = `M ${steps.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).j
       ))}
     </ul>
 
-    <!-- the literal bridge to what follows: contours, and a path stepping down them -->
-    <figure class="fnd-contours">
-      <svg viewBox="0 0 480 280" aria-hidden="true">
-        {contours.map((d) => <path data-draw class="contour" d={d} />)}
-        <path data-draw class="descent" d={descentD} />
-        {steps.map(([x, y], i) => <circle data-pop class="descent-dot" cx={x.toFixed(1)} cy={y.toFixed(1)} r={i === steps.length - 1 ? 5 : 3} />)}
-      </svg>
-      <figcaption class="visually-hidden">Contour lines with a gradient-descent path stepping into the minimum.</figcaption>
+    <!-- A working optimizer: drag the start point and compare update rules. -->
+    <figure class="fnd-contours optimizer-lab" data-optimizer-lab>
+      <div class="optimizer-heading">
+        <div>
+          <p class="mono optimizer-kicker">explorable objective</p>
+          <h3>How an optimizer finds the minimum</h3>
+        </div>
+        <output class="mono optimizer-status" data-opt-status aria-live="polite">Momentum / 22 updates / loss &lt;0.001</output>
+      </div>
+
+      <div class="optimizer-stage">
+        <svg viewBox="0 0 640 360" role="img" aria-labelledby="optimizer-title optimizer-desc">
+          <title id="optimizer-title">Interactive optimization landscape</title>
+          <desc id="optimizer-desc">A momentum optimizer descends an anisotropic quadratic loss. Drag or use the arrow keys on the start point to change its path.</desc>
+          <g class="optimizer-grid" aria-hidden="true">
+            <path d="M 56 178 H 594 M 320 30 V 326" />
+            <path d="M 144 30 V 326 M 232 30 V 326 M 408 30 V 326 M 496 30 V 326 M 56 106 H 594 M 56 250 H 594" />
+          </g>
+          <g aria-hidden="true">
+            {contours.map((d) => <path data-draw class="contour" d={d} />)}
+          </g>
+          <path class="descent" data-opt-path d={descentD} />
+          <g data-opt-steps aria-hidden="true">
+            {optimizerSvgSteps.slice(1, -1).map(([x, y], index) => (
+              <circle class="descent-dot" cx={x.toFixed(1)} cy={y.toFixed(1)} r={index % 2 === 0 ? 2.5 : 2} />
+            ))}
+          </g>
+          <circle class="optimizer-minimum" cx={OPT.cx} cy={OPT.cy} r="5" aria-hidden="true" />
+          <g
+            class="optimizer-start"
+            data-opt-start
+            role="slider"
+            tabindex="0"
+            aria-label="Optimizer starting point"
+            aria-valuemin="-3"
+            aria-valuemax="3"
+            aria-valuenow="2.5"
+            aria-valuetext="x 2.5, y -1.55"
+            transform={`translate(${startX.toFixed(1)} ${startY.toFixed(1)})`}
+          >
+            <circle class="optimizer-start-halo" r="15" />
+            <circle class="optimizer-start-dot" r="6" />
+          </g>
+          <g class="optimizer-turtle" data-opt-turtle transform={`translate(${endX.toFixed(1)} ${endY.toFixed(1)})`} aria-hidden="true">
+            <path d="M -8 0 H -12 M 7 -4 L 13 0 L 7 4 Z M -4 -5 L -7 -8 M -4 5 L -7 8 M 4 -5 L 7 -8 M 4 5 L 7 8" />
+            <circle cx="0" cy="0" r="7" />
+            <path d="M 0 0 L 5 -4 M 0 0 L 5 4 M 0 0 L -6 0" />
+          </g>
+          <text class="optimizer-axis-label" x="574" y="169">theta 1</text>
+          <text class="optimizer-axis-label" x="329" y="43">theta 2</text>
+        </svg>
+      </div>
+
+      <div class="optimizer-controls">
+        <fieldset class="optimizer-modes">
+          <legend class="mono">update rule</legend>
+          <div class="segmented-control" data-opt-modes>
+            <label><input type="radio" name="optimizer" value="sgd" disabled /> <span>SGD</span></label>
+            <label><input type="radio" name="optimizer" value="momentum" checked disabled /> <span>Momentum</span></label>
+          </div>
+        </fieldset>
+        <label class="optimizer-range mono">
+          <span>learning rate <output data-opt-rate>0.14</output></span>
+          <input data-opt-rate-input type="range" min="0.04" max="0.28" step="0.01" value="0.14" disabled />
+        </label>
+        <label class="optimizer-range mono" data-opt-momentum-control>
+          <span>momentum <output data-opt-momentum>0.68</output></span>
+          <input data-opt-momentum-input type="range" min="0" max="0.9" step="0.01" value="0.68" disabled />
+        </label>
+        <button class="optimizer-reset" type="button" data-opt-reset aria-label="Reset optimizer" title="Reset optimizer" disabled>&#8634;</button>
+      </div>
+      <figcaption class="mono muted optimizer-caption">
+        L(theta) = 0.55 theta1^2 + 1.15 theta2^2 + 0.35 theta1 theta2. The same objective can converge, oscillate, or diverge as the update rule and step size change.
+      </figcaption>
     </figure>
   </div>
 </section>
@@ -148,10 +225,168 @@ const descentD = `M ${steps.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).j
 
   .fnd-contours {
     margin: var(--s-8) auto calc(-1 * var(--s-6));
-    max-width: 480px;
   }
-  .fnd-contours svg { width: 100%; height: auto; overflow: visible; }
-  .contour { stroke: var(--ink-soft); stroke-width: 1.4; fill: none; opacity: 0.7; }
-  .descent { stroke: var(--ink); stroke-width: 2; fill: none; stroke-linejoin: round; }
+  .optimizer-lab {
+    max-width: 920px;
+    border-block: 1px solid var(--line);
+    padding-block: var(--s-5);
+  }
+  .optimizer-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: var(--s-4);
+    margin-bottom: var(--s-3);
+  }
+  .optimizer-heading h3 { font-size: var(--step-2); }
+  .optimizer-kicker {
+    color: var(--cobalt);
+    margin-bottom: var(--s-1);
+  }
+  .optimizer-status {
+    color: var(--ink-soft);
+    text-align: right;
+  }
+  .optimizer-stage {
+    position: relative;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--cobalt) 3%, var(--paper));
+    overflow: hidden;
+  }
+  .optimizer-stage svg {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    overflow: visible;
+    touch-action: none;
+  }
+  .optimizer-grid path {
+    stroke: color-mix(in srgb, var(--ink-soft) 18%, transparent);
+    stroke-width: 1;
+    fill: none;
+  }
+  .optimizer-grid path + path { stroke-dasharray: 2 8; }
+  .contour {
+    stroke: var(--ink-soft);
+    stroke-width: 1.4;
+    fill: none;
+    opacity: 0.58;
+  }
+  .descent {
+    stroke: var(--ink);
+    stroke-width: 2.2;
+    fill: none;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
   .descent-dot { fill: var(--cobalt); }
+  .optimizer-minimum {
+    fill: var(--paper);
+    stroke: var(--cobalt);
+    stroke-width: 2;
+  }
+  .optimizer-start { cursor: grab; }
+  .optimizer-start:focus { outline: none; }
+  .optimizer-start:active { cursor: grabbing; }
+  .optimizer-start-halo {
+    fill: color-mix(in srgb, var(--cobalt) 10%, transparent);
+    stroke: color-mix(in srgb, var(--cobalt) 35%, transparent);
+    stroke-width: 1;
+  }
+  .optimizer-start-dot {
+    fill: var(--paper);
+    stroke: var(--ink);
+    stroke-width: 2.2;
+  }
+  .optimizer-start:focus-visible .optimizer-start-halo {
+    stroke: var(--ink);
+    stroke-width: 2;
+  }
+  .optimizer-turtle {
+    fill: var(--paper);
+    stroke: var(--ink);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .optimizer-axis-label {
+    fill: var(--ink-soft);
+    font: 11px var(--font-mono);
+    letter-spacing: 0;
+  }
+  .optimizer-controls {
+    display: grid;
+    grid-template-columns: auto minmax(140px, 1fr) minmax(140px, 1fr) 44px;
+    gap: var(--s-4);
+    align-items: end;
+    margin-top: var(--s-4);
+  }
+  .optimizer-modes { border: 0; padding: 0; min-width: 0; }
+  .optimizer-modes legend,
+  .optimizer-range > span {
+    display: block;
+    margin-bottom: var(--s-2);
+    color: var(--ink-soft);
+  }
+  .segmented-control {
+    display: inline-grid;
+    grid-auto-flow: column;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .segmented-control label { position: relative; cursor: pointer; }
+  .segmented-control label + label { border-left: 1px solid var(--line-strong); }
+  .segmented-control input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .segmented-control span {
+    display: grid;
+    min-height: 42px;
+    padding: 8px 14px;
+    place-items: center;
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    background: var(--paper);
+  }
+  .segmented-control input:checked + span {
+    color: var(--paper);
+    background: var(--ink);
+  }
+  .segmented-control input:focus-visible + span {
+    outline: 2px solid var(--ink);
+    outline-offset: -3px;
+  }
+  .optimizer-range input {
+    display: block;
+    width: 100%;
+    accent-color: var(--cobalt);
+  }
+  .optimizer-range.is-disabled { opacity: 0.45; }
+  .optimizer-reset {
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    color: var(--ink);
+    background: var(--paper);
+    cursor: pointer;
+    font-size: 1.25rem;
+  }
+  .optimizer-reset:hover { background: var(--paper-deep); }
+  .optimizer-caption { margin-top: var(--s-3); }
+
+  @media (max-width: 719px) {
+    .optimizer-heading { align-items: start; flex-direction: column; }
+    .optimizer-status { text-align: left; }
+    .optimizer-controls { grid-template-columns: 1fr 44px; }
+    .optimizer-modes { grid-column: 1 / -1; }
+    .optimizer-range { grid-column: 1 / -1; }
+    .optimizer-reset { grid-column: 2; grid-row: 4; }
+    .optimizer-stage svg { aspect-ratio: 4 / 3; }
+    .optimizer-axis-label { font-size: 20px; }
+  }
 </style>

@@ -97,6 +97,50 @@ import SectionHeader from '../components/SectionHeader.astro';
       <figcaption class="mono muted">data → train → registry → deploy → monitor.</figcaption>
     </figure>
 
+    <figure class="production-trace" data-production-comparison data-state="after">
+      <div class="production-trace-head">
+        <div>
+          <p class="mono production-kicker">production outcome</p>
+          <h3>Load stopped dictating response time</h3>
+        </div>
+        <div class="production-toggle" role="group" aria-label="Production system state">
+          <button type="button" data-production-state="before" aria-pressed="false" disabled>Before</button>
+          <button type="button" data-production-state="after" aria-pressed="true" disabled>After</button>
+        </div>
+      </div>
+
+      <div class="production-trace-body">
+        <svg viewBox="0 0 720 280" role="img" aria-labelledby="production-trace-title production-trace-desc">
+          <title id="production-trace-title">Normalized API latency under increasing load</title>
+          <desc id="production-trace-desc">Before re-engineering, latency rises toward 25 seconds. After re-engineering, it remains below one second.</desc>
+          <g class="trace-grid" aria-hidden="true">
+            <path d="M 68 28 V232 H688" />
+            <path d="M68 181 H688 M68 130 H688 M68 79 H688" />
+          </g>
+          <path data-draw class="trace-line trace-before" d="M 72 218 C 160 214, 220 202, 284 183 C 363 160, 411 126, 472 99 C 549 65, 605 53, 682 42" />
+          <path data-draw class="trace-line trace-after" d="M 72 220 C 162 218, 221 220, 286 216 C 358 214, 420 217, 480 212 C 554 211, 613 214, 682 207" />
+          <text class="trace-label trace-label-before" x="676" y="32">~25 s</text>
+          <text class="trace-label trace-label-after" x="676" y="198">&lt;1 s</text>
+          <text class="trace-axis" x="69" y="258">increasing concurrent load</text>
+          <text class="trace-axis trace-axis-y" x="18" y="139" transform="rotate(-90 18 139)">API latency</text>
+        </svg>
+
+        <dl class="production-readout">
+          <div>
+            <dt class="mono">API latency</dt>
+            <dd data-production-latency>&lt;1 s</dd>
+          </div>
+          <div>
+            <dt class="mono">server-error index</dt>
+            <dd data-production-errors>5 / 100</dd>
+          </div>
+        </dl>
+      </div>
+      <figcaption class="mono muted">
+        Normalized from reported production outcomes; this is an explanatory comparison, not a raw monitoring export.
+      </figcaption>
+    </figure>
+
     <ul class="stat-row" role="list">
       <li class="stat">
         <span class="stat-num">~25 s → &lt;1 s</span>
@@ -142,6 +186,106 @@ import SectionHeader from '../components/SectionHeader.astro';
   .pl-connectors path { stroke: var(--ink); stroke-width: 1.5; fill: none; }
   .pl-arrow { fill: var(--ink); }
   .pl-spark { fill: none; stroke: var(--ember); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  .production-trace {
+    margin-block: var(--s-7);
+    padding-block: var(--s-5);
+    border-block: 1px solid var(--line);
+  }
+  .production-trace-head {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: var(--s-4);
+    margin-bottom: var(--s-4);
+  }
+  .production-trace-head h3 { font-size: var(--step-2); }
+  .production-kicker { color: var(--ember-text); margin-bottom: var(--s-1); }
+  .production-toggle {
+    display: inline-grid;
+    grid-auto-flow: column;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .production-toggle button {
+    min-width: 92px;
+    min-height: 42px;
+    border: 0;
+    color: var(--ink-soft);
+    background: var(--paper);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    cursor: pointer;
+  }
+  .production-toggle button + button { border-left: 1px solid var(--line-strong); }
+  .production-toggle button[aria-pressed="true"] { color: var(--paper); background: var(--ink); }
+  .production-toggle button:disabled { cursor: default; }
+  .production-trace-body {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(180px, 1fr);
+    gap: var(--s-5);
+    align-items: stretch;
+  }
+  .production-trace-body > svg {
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--ember) 3%, var(--paper));
+  }
+  .trace-grid path {
+    fill: none;
+    stroke: color-mix(in srgb, var(--ink-soft) 22%, transparent);
+    stroke-width: 1;
+  }
+  .trace-grid path + path { stroke-dasharray: 2 8; }
+  .trace-line {
+    fill: none;
+    stroke-width: 3;
+    stroke-linecap: round;
+    transition: opacity var(--t-fast) var(--ease), stroke-width var(--t-fast) var(--ease);
+  }
+  .trace-before { stroke: var(--ink-soft); }
+  .trace-after { stroke: var(--ember); }
+  .trace-label,
+  .trace-axis {
+    fill: var(--ink-soft);
+    font: 12px var(--font-mono);
+    letter-spacing: 0;
+    text-anchor: end;
+  }
+  .trace-axis { text-anchor: start; }
+  .production-trace[data-state="after"] .trace-before,
+  .production-trace[data-state="before"] .trace-after { opacity: 0.18; stroke-width: 1.5; }
+  .production-trace[data-state="after"] .trace-label-before,
+  .production-trace[data-state="before"] .trace-label-after { opacity: 0.28; }
+  .production-readout {
+    display: grid;
+    border-block: 1px solid var(--line);
+  }
+  .production-readout > div {
+    display: grid;
+    align-content: center;
+    padding: var(--s-4) 0;
+  }
+  .production-readout > div + div { border-top: 1px solid var(--line); }
+  .production-readout dt { color: var(--ink-soft); }
+  .production-readout dd {
+    margin-top: var(--s-1);
+    font-family: var(--font-display);
+    font-size: var(--step-3);
+    font-weight: 700;
+  }
+  .production-trace figcaption { margin-top: var(--s-3); }
+
+  @media (max-width: 719px) {
+    .production-trace-head { align-items: start; flex-direction: column; }
+    .production-trace-body { grid-template-columns: 1fr; }
+    .production-readout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .production-readout > div + div { border-top: 0; border-left: 1px solid var(--line); padding-left: var(--s-4); }
+    .production-readout dd { font-size: var(--step-2); }
+  }
 
   .stat-row { margin-top: var(--s-7); }
   .stat-note { margin-top: var(--s-4); }

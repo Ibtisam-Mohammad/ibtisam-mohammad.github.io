@@ -76,13 +76,15 @@ export function initVisionScene() {
             : `inset(${(inset[0] * k).toFixed(2)}% ${(inset[1] * k).toFixed(2)}% ${(inset[2] * k).toFixed(2)}% ${(inset[3] * k).toFixed(2)}%)`;
       }
 
-      // second detection
+      // Remaining detections arrive in confidence order.
       if (boxes[1]) setDraw(boxes[1], seg(s, 0.52, 0.64));
       if (chips[1]) chips[1].style.opacity = smooth(seg(s, 0.64, 0.7)).toFixed(3);
+      if (boxes[2]) setDraw(boxes[2], seg(s, 0.68, 0.76));
+      if (chips[2]) chips[2].style.opacity = smooth(seg(s, 0.76, 0.81)).toFixed(3);
 
       // segmentation tint: 0 -> 30% -> 0, scrubbed
       if (segEl) {
-        const o = 0.3 * smooth(seg(s, 0.7, 0.8)) * (1 - smooth(seg(s, 0.86, 0.97)));
+        const o = 0.3 * smooth(seg(s, 0.81, 0.88)) * (1 - smooth(seg(s, 0.92, 0.99)));
         segEl.style.opacity = o.toFixed(3);
       }
 

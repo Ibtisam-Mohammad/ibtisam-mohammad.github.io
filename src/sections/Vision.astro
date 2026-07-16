@@ -32,8 +32,10 @@ const projects = [
 // detections in cv-scene.webp coordinates (1280x853): the defect, then a healthy part
 const BOX1 = { x: 596, y: 352, w: 214, h: 172, label: 'object 0.97' };
 const BOX2 = { x: 136, y: 414, w: 330, h: 202, label: 'part 0.88' };
+const BOX3 = { x: 930, y: 418, w: 224, h: 164, label: 'part 0.58' };
 const box1D = wobbleRect(BOX1.x, BOX1.y, BOX1.w, BOX1.h, rand, { step: 46, amp: 5 });
 const box2D = wobbleRect(BOX2.x, BOX2.y, BOX2.w, BOX2.h, rand, { step: 52, amp: 5 });
+const box3D = wobbleRect(BOX3.x, BOX3.y, BOX3.w, BOX3.h, rand, { step: 44, amp: 4 });
 // clip-path insets for "the image appears inside the box" (fractions of the frame)
 const clip1 = {
   top: ((BOX1.y / 853) * 100).toFixed(2),
@@ -69,22 +71,40 @@ const bones: [string, string][] = [
           <img
             class="cv-img"
             src="/img/cv-scene.webp"
-            alt="Stylized conveyor scene with two object-detection boxes and confidence labels"
+            alt="Stylized conveyor scene with three object-detection proposals and confidence labels"
             width="1280" height="853" loading="lazy" decoding="async"
           />
           <div class="cv-seg" aria-hidden="true"></div>
           <svg class="cv-overlay" viewBox="0 0 1280 853" preserveAspectRatio="none" aria-hidden="true">
-            <path data-draw class="cv-box" d={box1D} />
-            <g class="cv-chip" data-chip="1">
-              <rect x={BOX1.x} y={BOX1.y - 44} width="200" height="38" rx="6" />
-              <text x={BOX1.x + 14} y={BOX1.y - 17}>{BOX1.label}</text>
+            <g class="cv-detection" data-confidence="0.97">
+              <path data-draw class="cv-box" d={box1D} />
+              <g class="cv-chip" data-chip="1">
+                <rect x={BOX1.x} y={BOX1.y - 44} width="200" height="38" rx="6" />
+                <text x={BOX1.x + 14} y={BOX1.y - 17}>{BOX1.label}</text>
+              </g>
             </g>
-            <path data-draw class="cv-box cv-box-2" d={box2D} />
-            <g class="cv-chip" data-chip="2">
-              <rect x={BOX2.x} y={BOX2.y - 44} width="152" height="38" rx="6" />
-              <text x={BOX2.x + 14} y={BOX2.y - 17}>{BOX2.label}</text>
+            <g class="cv-detection" data-confidence="0.88">
+              <path data-draw class="cv-box cv-box-2" d={box2D} />
+              <g class="cv-chip" data-chip="2">
+                <rect x={BOX2.x} y={BOX2.y - 44} width="152" height="38" rx="6" />
+                <text x={BOX2.x + 14} y={BOX2.y - 17}>{BOX2.label}</text>
+              </g>
+            </g>
+            <g class="cv-detection is-filtered" data-confidence="0.58">
+              <path data-draw class="cv-box cv-box-3" d={box3D} />
+              <g class="cv-chip" data-chip="3">
+                <rect x={BOX3.x} y={BOX3.y - 44} width="152" height="38" rx="6" />
+                <text x={BOX3.x + 14} y={BOX3.y - 17}>{BOX3.label}</text>
+              </g>
             </g>
           </svg>
+        </div>
+        <div class="threshold-tool" data-detection-threshold>
+          <label class="mono" for="confidence-threshold">
+            confidence threshold <output data-threshold-value>0.70</output>
+          </label>
+          <input id="confidence-threshold" data-threshold-input type="range" min="0.35" max="0.99" step="0.01" value="0.70" disabled />
+          <output class="mono threshold-result" data-threshold-result aria-live="polite">2 of 3 proposals retained</output>
         </div>
         <figcaption class="mono muted">Object-detection study · illustrative scene; client footage remains private.</figcaption>
       </figure>
@@ -162,19 +182,42 @@ const bones: [string, string][] = [
   }
   .cv-box { stroke: var(--leaf); stroke-width: 4.5; fill: none; stroke-linejoin: round; }
   .cv-box-2 { stroke: var(--teal); }
+  .cv-box-3 { stroke: var(--ink-soft); }
   .cv-chip rect { fill: var(--leaf); }
   .cv-chip[data-chip="2"] rect { fill: var(--teal); }
+  .cv-chip[data-chip="3"] rect { fill: var(--ink-soft); }
   .cv-chip text {
     font-family: var(--font-mono);
     font-size: 26px;
     letter-spacing: 0.04em;
     fill: var(--paper);
   }
+  .cv-detection {
+    opacity: 1;
+    transition: opacity var(--t-fast) var(--ease);
+  }
+  .cv-detection.is-filtered { opacity: 0.14; }
+  .cv-detection.is-filtered .cv-box { stroke-dasharray: 12 10; }
+  .threshold-tool {
+    display: grid;
+    grid-template-columns: auto minmax(130px, 1fr) auto;
+    gap: var(--s-3);
+    align-items: center;
+    margin-top: var(--s-3);
+    padding-block: var(--s-3);
+    border-block: 1px solid var(--line);
+  }
+  .threshold-tool label,
+  .threshold-result { color: var(--ink-soft); }
+  .threshold-tool input { width: 100%; accent-color: var(--leaf); }
+  .threshold-result { text-align: right; }
   .pose-head, .pose-bone { stroke: var(--leaf); stroke-width: 5; fill: none; stroke-linecap: round; }
   .pose-joint { fill: var(--cobalt); }
   @media (max-width: 719px) {
     /* mobile keeps the bounding-box reveal, drops the skeleton (§10.4) */
     .pose-svg { display: none; }
+    .threshold-tool { grid-template-columns: 1fr; gap: var(--s-2); }
+    .threshold-result { text-align: left; }
   }
 
   .project-grid { margin-top: var(--s-6); padding: 0; list-style: none; }

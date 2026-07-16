@@ -34,6 +34,40 @@ const edges = edgePairs.map(([i, j]) => {
   const m = Math.hypot(nx, ny) || 1;
   return `M ${a.x} ${a.y} Q ${(mx + (nx / m) * 16).toFixed(1)} ${(my + (ny / m) * 16).toFixed(1)}, ${b.x} ${b.y}`;
 });
+
+const defenceDomains = [
+  {
+    id: 'autonomy', label: 'autonomy', x: 112, y: 82,
+    description: 'Autopilots, unmanned platforms, payloads, navigation, and edge AI viewed as one operating stack.',
+    related: 'autopilots / payloads / navigation / edge AI',
+  },
+  {
+    id: 'sensing', label: 'sensing', x: 350, y: 48,
+    description: 'Radar, RF, imagery, tracking, and fusion resources connected by the evidence they produce.',
+    related: 'radar / SDR / imagery / tracking / fusion',
+  },
+  {
+    id: 'geospatial', label: 'geospatial', x: 608, y: 90,
+    description: 'Mapping, remote sensing, terrain, and geolocation tools that turn observations into spatial context.',
+    related: 'GIS / remote sensing / terrain / geolocation',
+  },
+  {
+    id: 'communications', label: 'communications', x: 625, y: 275,
+    description: 'Telemetry, mesh networking, tactical data exchange, and the interfaces that keep components interoperable.',
+    related: 'telemetry / mesh / protocols / data links',
+  },
+  {
+    id: 'simulation', label: 'simulation', x: 350, y: 320,
+    description: 'Robotics, digital environments, and test infrastructure for rehearsing systems before field deployment.',
+    related: 'robotics / simulators / synthetic data / testing',
+  },
+  {
+    id: 'standards', label: 'standards', x: 94, y: 276,
+    description: 'Public standards, institutions, datasets, and provenance labels that make the collection usable and maintainable.',
+    related: 'standards / datasets / institutions / licensing',
+  },
+];
+const defenceCenter = { x: 350, y: 184 };
 ---
 <section id="notes" class="section" style="--accent: var(--violet)" aria-labelledby="notes-title">
   <div class="wash" data-opacity="0.12" style="--o: 0.12; --tex: url(/textures/wash-bloom-b.webp); --tint: var(--violet); right: -70px; top: 18%; width: calc(var(--gutter) + 60px); aspect-ratio: 1;"></div>
@@ -45,6 +79,66 @@ const edges = edgePairs.map(([i, j]) => {
       glyphId="notes"
       lede="Technical field notes spanning open systems research, agents, vision, speech, and ML tooling."
     />
+
+    <section class="defence-atlas" data-defence-atlas aria-labelledby="defence-atlas-title">
+      <header class="defence-atlas-head">
+        <div>
+          <p class="mono defence-atlas-kicker">featured open-source work</p>
+          <h3 id="defence-atlas-title">Awesome Defence systems atlas</h3>
+        </div>
+        <a class="mono" href="https://github.com/Ibtisam-Mohammad/awesome-defense">most-starred repository &#8599;</a>
+      </header>
+
+      <div class="defence-atlas-body">
+        <svg class="defence-map" viewBox="0 0 720 380" role="group" aria-label="Domains mapped in the Awesome Defence repository">
+          <g class="defence-orbits" aria-hidden="true">
+            <ellipse cx={defenceCenter.x} cy={defenceCenter.y} rx="258" ry="132" />
+            <ellipse cx={defenceCenter.x} cy={defenceCenter.y} rx="171" ry="88" />
+          </g>
+          <g class="defence-connections" aria-hidden="true">
+            {defenceDomains.map((domain) => (
+              <path data-draw d={`M ${defenceCenter.x} ${defenceCenter.y} Q ${(defenceCenter.x + domain.x) / 2 + (domain.y - defenceCenter.y) * 0.08} ${(defenceCenter.y + domain.y) / 2 - (domain.x - defenceCenter.x) * 0.05} ${domain.x} ${domain.y}`} />
+            ))}
+          </g>
+          <g class="defence-core" aria-hidden="true">
+            <circle cx={defenceCenter.x} cy={defenceCenter.y} r="54" />
+            <text x={defenceCenter.x} y={defenceCenter.y - 4}>open</text>
+            <text x={defenceCenter.x} y={defenceCenter.y + 18}>systems</text>
+          </g>
+          {defenceDomains.map((domain, index) => (
+            <g
+              class:list={['defence-node', { 'is-active': index === 0 }]}
+              data-defence-node
+              data-id={domain.id}
+              data-title={domain.label}
+              data-description={domain.description}
+              data-related={domain.related}
+              role="button"
+              tabindex="0"
+              aria-pressed={index === 0 ? 'true' : 'false'}
+              aria-label={`Explore ${domain.label}`}
+            >
+              <circle class="defence-node-hit" cx={domain.x} cy={domain.y} r="46" />
+              <circle class="defence-node-ring" cx={domain.x} cy={domain.y} r="31" />
+              <circle class="defence-node-dot" cx={domain.x} cy={domain.y} r="5" />
+              <text x={domain.x} y={domain.y + 53}>{domain.label}</text>
+            </g>
+          ))}
+        </svg>
+
+        <div class="defence-detail" aria-live="polite">
+          <p class="mono muted" data-defence-index>01 / 06</p>
+          <h3 data-defence-title>{defenceDomains[0].label}</h3>
+          <p data-defence-description>{defenceDomains[0].description}</p>
+          <p class="mono muted" data-defence-related>{defenceDomains[0].related}</p>
+          <div class="defence-links">
+            <a href="/notes/open-resources-defence-systems/">read the field note &#8594;</a>
+            <a href="https://github.com/Ibtisam-Mohammad/awesome-defense">browse the repository &#8599;</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <div class="notes-layout">
       <ol class="notes-list" role="list">
         {orderedNotes.map((n) => (
@@ -87,6 +181,91 @@ const edges = edgePairs.map(([i, j]) => {
 
 <style>
   #notes { overflow: clip; }
+  .defence-atlas {
+    margin-block: var(--s-7) var(--s-8);
+    padding-block: var(--s-5);
+    border-block: 1px solid var(--line);
+  }
+  .defence-atlas-head {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: var(--s-4);
+    margin-bottom: var(--s-4);
+  }
+  .defence-atlas-head h3 { font-size: var(--step-2); }
+  .defence-atlas-kicker { color: var(--cobalt); margin-bottom: var(--s-1); }
+  .defence-atlas-head > a {
+    position: relative;
+    background: var(--paper);
+    box-shadow: 0 0 0 4px var(--paper);
+  }
+  .defence-atlas-body {
+    display: grid;
+    grid-template-columns: minmax(0, 2.2fr) minmax(240px, 1fr);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--cobalt) 2.5%, var(--paper));
+    overflow: hidden;
+  }
+  .defence-map { width: 100%; height: auto; align-self: center; }
+  .defence-orbits ellipse {
+    fill: none;
+    stroke: color-mix(in srgb, var(--ink-soft) 20%, transparent);
+    stroke-width: 1;
+    stroke-dasharray: 3 9;
+  }
+  .defence-connections path {
+    fill: none;
+    stroke: var(--ink-soft);
+    stroke-width: 1.25;
+    opacity: 0.48;
+  }
+  .defence-core circle {
+    fill: var(--paper);
+    stroke: var(--ink);
+    stroke-width: 1.8;
+  }
+  .defence-core text,
+  .defence-node text {
+    fill: var(--ink-soft);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    letter-spacing: 0;
+    text-anchor: middle;
+  }
+  .defence-core text { fill: var(--ink); font-size: 15px; }
+  .defence-node { cursor: pointer; pointer-events: bounding-box; }
+  .defence-node-hit { fill: transparent; }
+  .defence-node-ring {
+    fill: var(--paper);
+    stroke: var(--ink-soft);
+    stroke-width: 1.5;
+    transition: fill var(--t-fast) var(--ease), stroke-width var(--t-fast) var(--ease);
+  }
+  .defence-node-dot { fill: var(--cobalt); }
+  .defence-node:hover .defence-node-ring,
+  .defence-node:focus-visible .defence-node-ring,
+  .defence-node.is-active .defence-node-ring {
+    fill: color-mix(in srgb, var(--cobalt) 12%, var(--paper));
+    stroke: var(--ink);
+    stroke-width: 2.5;
+  }
+  .defence-node:focus { outline: none; }
+  .defence-detail {
+    display: grid;
+    align-content: center;
+    gap: var(--s-3);
+    padding: var(--s-5);
+    border-left: 1px solid var(--line);
+    background: var(--paper);
+  }
+  .defence-detail h3 { text-transform: capitalize; }
+  .defence-links {
+    display: grid;
+    gap: var(--s-2);
+    margin-top: var(--s-2);
+  }
   .notes-layout { display: grid; gap: var(--s-6); }
   @media (min-width: 1024px) {
     .notes-layout { grid-template-columns: 1fr 300px; align-items: start; }
@@ -130,7 +309,7 @@ const edges = edgePairs.map(([i, j]) => {
     stroke-width: 3.2;
     fill: color-mix(in srgb, var(--na, var(--violet)) 55%, var(--paper));
   }
-  .ng-node:focus-visible { outline: none; }
+  .ng-node:focus { outline: none; }
   .ng-node text {
     font-family: var(--font-mono);
     font-size: 10.5px;
@@ -140,4 +319,12 @@ const edges = edgePairs.map(([i, j]) => {
   }
   .notes-graph-wrap figcaption { margin-top: var(--s-3); }
   .diary-link { grid-column: 1; margin-top: var(--s-2); }
+
+  @media (max-width: 719px) {
+    .defence-atlas-head { align-items: start; flex-direction: column; }
+    .defence-atlas-body { grid-template-columns: 1fr; }
+    .defence-detail { border-left: 0; border-top: 1px solid var(--line); }
+    .defence-node text { font-size: 22px; }
+    .defence-core text { font-size: 22px; }
+  }
 </style>

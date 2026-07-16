@@ -8,8 +8,10 @@ export function initGenAiScene() {
   if (!el) return;
 
   // (the heading's stroke-reveal is driven by the site-wide scenes/headings.js)
+  const system = el.querySelector('.gen-system');
   const frame = el.querySelector('[data-part="frame"]');
   const stages = [...el.querySelectorAll('.gen-system-stage')];
+  const stageControls = [...el.querySelectorAll('[data-gen-stage]')];
   const doodle = el.querySelector('.gen-doodle');
   const doodleCurve = doodle && doodle.querySelector('[data-part="curve"]');
   const doodleDots = doodle ? [...doodle.querySelectorAll('[data-part="dot"]')] : [];
@@ -55,8 +57,11 @@ export function initGenAiScene() {
     },
     update(s) {
       if (frame) setDraw(frame, seg(s, 0.08, 0.76));
-      const active = Math.min(stages.length - 1, Math.floor(s * stages.length));
-      stages.forEach((stage, index) => stage.classList.toggle('is-active', index === active));
+      if (!system?.dataset.stagePinned) {
+        const active = Math.min(stages.length - 1, Math.floor(s * stages.length));
+        stages.forEach((stage, index) => stage.classList.toggle('is-active', index === active));
+        stageControls.forEach((control, index) => control.setAttribute('aria-pressed', String(index === active)));
+      }
 
       // diffusion-trajectory doodle: curve, then dots converge along it
       if (doodleCurve) setDraw(doodleCurve, seg(s, 0.84, 0.94));

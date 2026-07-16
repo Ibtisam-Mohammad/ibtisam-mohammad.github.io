@@ -11,12 +11,14 @@ import { initHeadingReveals } from './scenes/headings.js';
 import { initVisionScene } from './scenes/vision.js';
 import { initSectionScenes, initNotesInteractive } from './scenes/sections.js';
 import { initNameDuality } from './name-duality.js';
+import { initNotebookInstruments } from './instruments.js';
 
 const anim = document.documentElement.classList.contains('anim');
 const hasStory = Boolean(document.getElementById('hero'));
 
 // This filtering interaction is functional and remains available with reduced motion.
 initNotesInteractive();
+initNotebookInstruments();
 
 if (anim && hasStory) {
   // Scenes register their local turtle choreography before the document path is measured.
