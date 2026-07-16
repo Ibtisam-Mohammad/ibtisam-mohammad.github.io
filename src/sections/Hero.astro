@@ -37,6 +37,19 @@ const yAxisD = `M ${X0} 2 V 112 M ${X0 - 3} 40 H ${X0 + 3} M ${X0 - 3} 70 H ${X0
     </svg>
     <p class="lede thesis">AI engineer and physicist building systems that work beyond the notebook.</p>
     <p class="mono muted roles">Computer vision &middot; generative AI &middot; agents &middot; MLOps</p>
+    <div class="oss-proof">
+      <p class="oss-copy">
+        <span class="mono oss-kicker">Open source</span>
+        I curate <a class="oss-title" href="/notes/open-resources-defence-systems/"><strong>Awesome Defence</strong></a>,
+        a public map of open tools and research across autonomy, sensing, geospatial
+        intelligence, and simulation.
+      </p>
+      <a
+        class="mono oss-repo"
+        href="https://github.com/Ibtisam-Mohammad/awesome-defense"
+        aria-label="View Awesome Defence, my most-starred repository, on GitHub"
+      >my most-starred repository &middot; GitHub &#8599;</a>
+    </div>
     <div class="actions">
       <a class="btn btn-primary" href="#work">View work</a>
       <a class="btn btn-ghost" href="/resume.pdf" download>Download résumé</a>
@@ -95,13 +108,41 @@ const yAxisD = `M ${X0} 2 V 112 M ${X0 - 3} 40 H ${X0 + 3} M ${X0 - 3} 70 H ${X0
     max-width: 34ch;
   }
   .roles { margin-top: var(--s-4); }
+  .oss-proof {
+    max-width: 68ch;
+    margin-top: var(--s-5);
+    padding-left: var(--s-4);
+    border-left: 2px solid var(--cobalt);
+  }
+  .oss-copy {
+    color: var(--ink-soft);
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+  .oss-kicker {
+    margin-right: var(--s-2);
+    color: var(--cobalt);
+    font-size: var(--step--1);
+  }
+  .oss-title { color: var(--ink); }
+  .oss-repo {
+    display: inline-block;
+    margin-top: var(--s-2);
+    color: var(--ink-soft);
+    font-size: var(--step--1);
+    text-underline-offset: 3px;
+  }
   .actions {
     display: flex;
     flex-wrap: wrap;
     gap: var(--s-4);
-    margin-top: var(--s-6);
+    margin-top: var(--s-5);
   }
   @media (max-width: 719px) {
     .hero { min-height: 138svh; }
+    .oss-proof {
+      margin-top: var(--s-4);
+      padding-left: var(--s-3);
+    }
   }
 </style>

@@ -6,6 +6,13 @@
 import SectionHeader from '../components/SectionHeader.astro';
 import { notes } from '../data/notes';
 
+const featuredSlug = 'open-resources-defence-systems';
+const orderedNotes = [...notes].sort((a, b) => {
+  if (a.slug === featuredSlug) return -1;
+  if (b.slug === featuredSlug) return 1;
+  return 0;
+});
+
 // the graph: one node per topic, hand-laid layout, curved edges between related ideas
 const nodes = [
   { tag: 'agents', x: 150, y: 62, a: 'violet' },
@@ -36,13 +43,13 @@ const edges = edgePairs.map(([i, j]) => {
       title="Notes"
       headingId="notes-title"
       glyphId="notes"
-      lede="Technical field notes from projects spanning agents, vision, speech, and ML tooling."
+      lede="Technical field notes spanning open systems research, agents, vision, speech, and ML tooling."
     />
     <div class="notes-layout">
       <ol class="notes-list" role="list">
-        {notes.map((n) => (
-          <li class="note" data-tags={n.tags.map((t) => t.t).join('|')}>
-            <span class="mono muted">{n.kind}</span>
+        {orderedNotes.map((n) => (
+          <li class:list={['note', { featured: n.slug === featuredSlug }]} data-tags={n.tags.map((t) => t.t).join('|')}>
+            <span class="mono muted">{n.slug === featuredSlug ? 'featured repo' : n.kind}</span>
             <span class="note-title"><a href={`/notes/${n.slug}/`}>{n.title}</a></span>
             <ul class="chip-row note-tags" role="list">
               {n.tags.map((tag) => (
@@ -95,6 +102,10 @@ const edges = edgePairs.map(([i, j]) => {
     transition: background-color var(--t-fast) var(--ease), opacity var(--t-fast) var(--ease);
   }
   .note + .note { border-top: 1px solid var(--line-soft); }
+  .note.featured {
+    border-left: 2px solid var(--cobalt);
+    background: color-mix(in srgb, var(--cobalt) 4%, transparent);
+  }
   .note-title { font-weight: 600; font-size: var(--step-0); }
   .note.dim { opacity: 0.38; }
   .note.hl { background: color-mix(in srgb, var(--accent) 9%, transparent); }
