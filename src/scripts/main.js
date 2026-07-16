@@ -10,6 +10,7 @@ import { initInkSettle } from './scenes/ink.js';
 import { initHeadingReveals } from './scenes/headings.js';
 import { initVisionScene } from './scenes/vision.js';
 import { initSectionScenes, initNotesInteractive } from './scenes/sections.js';
+import { initNameDuality } from './name-duality.js';
 
 const anim = document.documentElement.classList.contains('anim');
 const hasStory = Boolean(document.getElementById('hero'));
@@ -20,6 +21,7 @@ initNotesInteractive();
 if (anim && hasStory) {
   // Scenes register their local turtle choreography before the document path is measured.
   performance.mark('b0');
+  initNameDuality();
   initHeroScene();
   initGenAiScene();
   initVisionScene();

@@ -28,7 +28,12 @@ const yAxisD = `M ${X0} 2 V 112 M ${X0 - 3} 40 H ${X0 + 3} M ${X0 - 3} 70 H ${X0
 <section id="hero" class="section hero" style="--accent: var(--cobalt)">
   <div class="hero-pin">
     <div class="container">
-    <h1>Ibtisam</h1>
+    <h1 class="hero-name">
+      <span class="duality-name" data-duality-name>
+        <span class="duality-name-label" data-duality-label>Ibtisam</span>
+        <canvas class="duality-name-canvas" data-duality-canvas aria-hidden="true"></canvas>
+      </span>
+    </h1>
     <svg class="hero-scene" viewBox="0 0 1000 120" aria-hidden="true">
       <path data-part="axis" data-draw d={yAxisD} class="axis" />
       <path data-part="axis" data-draw d={xAxisD} class="axis" />
@@ -79,6 +84,23 @@ const yAxisD = `M ${X0} 2 V 112 M ${X0 - 3} 40 H ${X0 + 3} M ${X0 - 3} 70 H ${X0
     height: auto;
     margin-top: 0; /* svg scales with width: only pull it up where it renders large */
     overflow: visible;
+  }
+  .hero-name { width: fit-content; }
+  .duality-name {
+    position: relative;
+    display: inline-block;
+    isolation: isolate;
+  }
+  .duality-name-label {
+    display: block;
+    will-change: opacity;
+  }
+  .duality-name-canvas {
+    position: absolute;
+    z-index: 1;
+    max-width: none;
+    pointer-events: none;
+    opacity: 0;
   }
   @media (min-width: 720px) {
     .hero-scene { margin-top: -12px; } /* underline hugs the name's baseline */
