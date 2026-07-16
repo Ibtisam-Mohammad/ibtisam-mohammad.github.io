@@ -27,14 +27,13 @@ export function initNameDuality() {
     height: 0,
     pad: 0,
     glyphs: [],
+    ink: '',
     progress: 0,
     destination: 0,
     phase: 0,
     lastTime: 0,
     frame: 0,
   };
-
-  const palette = ['--ink', '--cobalt', '--teal', '--violet', '--rose-wash', '--ember', '--leaf'];
 
   function buildParticles() {
     const rect = label.getBoundingClientRect();
@@ -95,7 +94,7 @@ export function initNameDuality() {
 
     const pixels = maskContext.getImageData(0, 0, canvasWidth, canvasHeight).data;
     const step = Math.max(2, Math.round(fontSize / 24));
-    const colors = palette.map((token) => styles.getPropertyValue(token).trim());
+    const ink = styles.getPropertyValue('--ink').trim();
     const particles = [];
 
     for (let y = 0; y < canvasHeight; y += step) {
@@ -106,13 +105,11 @@ export function initNameDuality() {
         const glyphIndex = boundaries.findIndex((boundary) => x < boundary);
         const resolvedGlyphIndex = glyphIndex === -1 ? glyphs.length - 1 : glyphIndex;
         const glyph = glyphs[resolvedGlyphIndex];
-        const accentIndex = 1 + (resolvedGlyphIndex % (colors.length - 1));
         particles.push({
           x,
           y,
           seed,
           radius: mix(0.7, 1.45, hash(x + 7, y + 3)),
-          color: seed < 0.56 ? colors[0] : colors[accentIndex],
           glyphIndex: resolvedGlyphIndex,
           localX: clamp01((x - glyph.left) / glyph.width),
         });
@@ -124,10 +121,11 @@ export function initNameDuality() {
     state.height = height;
     state.pad = pad;
     state.glyphs = glyphs;
+    state.ink = ink;
   }
 
   function render() {
-    const { particles, glyphs, width, height, pad, progress, phase } = state;
+    const { particles, glyphs, width, height, pad, ink, progress, phase } = state;
     const eased = smooth(progress);
     const centerY = pad + height / 2;
     const waveAmplitude = Math.max(3, height * 0.058);
@@ -135,6 +133,7 @@ export function initNameDuality() {
 
     context.clearRect(0, 0, width + pad * 2, height + pad * 2);
     context.globalAlpha = clamp01(progress * 2.8);
+    context.fillStyle = ink;
 
     for (const particle of particles) {
       const glyph = glyphs[particle.glyphIndex];
@@ -149,7 +148,6 @@ export function initNameDuality() {
       const pulse = 0.88 + 0.22 * (0.5 + 0.5 * Math.sin(phase * 4.2 + particle.seed * TAU));
 
       context.beginPath();
-      context.fillStyle = particle.color;
       context.arc(x, y, particle.radius * pulse, 0, TAU);
       context.fill();
     }
