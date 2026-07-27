@@ -175,15 +175,15 @@ export function initSectionScenes() {
     });
   }
 
-  // §10.7 — case studies: taped frames on every card, P→A→R arrows on the lead only
+  // §10.7 — case studies: taped frames and P→A→R connective arrows on every card
+  // (arrows on the lead only read as missing dashes on the rest)
   for (const svg of document.querySelectorAll('.cs-frame-svg')) {
     autoScene(svg, { startF: 0.9, endF: 0.65, drawEnd: 0.7, popStart: 0.65 });
   }
-  const lead = document.querySelector('.cs-card .cs-rows');
-  if (lead) {
+  for (const rows of document.querySelectorAll('.cs-card .cs-rows')) {
     let arrowSvg = null;
     addScene({
-      el: lead,
+      el: rows,
       start: 0,
       end: 1,
       _last: -1,
@@ -196,9 +196,9 @@ export function initSectionScenes() {
         arrowSvg = document.createElementNS(NS, 'svg');
         arrowSvg.setAttribute('class', 'cs-arrows');
         arrowSvg.setAttribute('aria-hidden', 'true');
-        const rowsRect = lead.getBoundingClientRect();
+        const rowsRect = rows.getBoundingClientRect();
         arrowSvg.setAttribute('viewBox', `0 0 ${Math.round(rowsRect.width)} ${Math.round(rowsRect.height)}`);
-        const dts = [...lead.querySelectorAll('dt')].slice(0, 3);
+        const dts = [...rows.querySelectorAll('dt')].slice(0, 3);
         this.paths = [];
         for (let i = 0; i < dts.length - 1; i++) {
           const a = dts[i].getBoundingClientRect();
@@ -213,7 +213,7 @@ export function initSectionScenes() {
           arrowSvg.appendChild(p);
           this.paths.push(p);
         }
-        lead.appendChild(arrowSvg);
+        rows.appendChild(arrowSvg);
         preparePaths(arrowSvg);
       },
       update(s) {

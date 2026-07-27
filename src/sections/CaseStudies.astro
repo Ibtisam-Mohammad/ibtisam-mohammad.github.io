@@ -34,14 +34,14 @@ const cases = [
     availability: 'DwarfAI · 2024–25',
   },
   {
-    name: 'AI-assisted class rescheduling',
-    problem: 'Students who missed a class needed a faster path back into the schedule than a manual support exchange.',
-    approach: 'Built an SMS workflow that contacts affected students and hands the conversation to an AI chatbot for self-service rescheduling and class questions, connected through messaging, background jobs, and CRM workflows.',
-    result: 'The workflow achieved a 25% click-through rate and converted 14% of contacted students into bookings.',
-    resultChips: ['25% CTR', '14% booking conversion'],
-    stack: ['Twilio', 'LLM', 'background queues', 'CRM'],
+    name: 'Campaign orchestrator with LLM drafting',
+    problem: 'Building a multi-step outreach campaign meant hand-writing every email and SMS, wiring the audience, and stitching results across tools — hours of work per campaign.',
+    approach: 'Built a full-stack platform: LLM services draft the campaign from one description, review the sequence, and assist live operations; background workers handle audience sync, scheduled SendGrid and Twilio dispatch, and CRM writeback through an outbox; registration webhooks attribute sign-ups back to the exact send.',
+    result: 'Campaign creation went from hours of manual work to minutes — draft, review, launch, and tracked registrations on one platform.',
+    resultChips: ['hours → minutes', 'draft to tracked sign-ups'],
+    stack: ['ASP.NET Core', 'React', 'SQL Server', 'SendGrid', 'Twilio'],
     shot: '/img/shot-pipeline.webp',
-    shotAlt: 'Illustrated messaging workflow with automation stages and outcome monitoring',
+    shotAlt: 'Illustrated campaign platform with workflow stages, delivery chart, and status rows',
     availability: 'Vikara AI · 2026',
   },
 ];
@@ -58,7 +58,7 @@ const TAPE_BR = 'M 462 344 L 516 290 L 540 314 L 486 368 Z';
       title="Selected case studies"
       headingId="work-title"
       glyphId="work"
-      lede="Three shipped systems, described with the problem, engineering approach, and outcomes I can substantiate."
+      lede="Three shipped systems: problem, approach, result."
     />
     <div class="case-list">
       {cases.map((c, i) => (
@@ -107,7 +107,6 @@ const TAPE_BR = 'M 462 344 L 516 290 L 540 314 L 486 368 Z';
         </article>
       ))}
     </div>
-    <p class="mono muted cs-note">Illustrations are privacy-safe reconstructions — client footage and code stay private.</p>
     <!-- peak buying intent lives right here, after the results -->
     <div class="cs-cta" data-vine-exclude>
       <p class="cs-cta-line">Need results like these on your system?</p>
@@ -154,7 +153,6 @@ const TAPE_BR = 'M 462 344 L 516 290 L 540 314 L 486 368 Z';
   .cs-row dt { letter-spacing: 0.08em; }
   .cs-row dd { margin: 0; }
   .cs-result { font-weight: 600; margin-bottom: var(--s-2); }
-  .cs-note { margin-top: var(--s-4); }
   .cs-cta {
     display: flex;
     align-items: center;
