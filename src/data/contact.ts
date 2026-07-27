@@ -16,7 +16,7 @@ export const RESUME = '/resume.pdf';
  * A booking button is the highest-intent control on the page — it must never
  * render pointing at a placeholder.
  */
-export const BOOKING: string | null = null;
+export const BOOKING: string | null = 'https://calendar.app.google/VrXwJndxMySv1FJM8';
 
 /** Label used wherever the booking action is offered. */
 export const BOOKING_LABEL = 'Book a call';
