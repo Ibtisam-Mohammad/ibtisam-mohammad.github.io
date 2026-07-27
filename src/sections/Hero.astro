@@ -6,6 +6,7 @@
 //
 // Decision (DESIGN.md): the h1 stays real text at all times — identity must land in
 // 5 seconds and "scanning wins" (§1). Stroke-reveal headings apply from §10.5 on.
+import { BOOKING, BOOKING_LABEL, EMAIL_HREF, RESUME } from '../data/contact';
 
 const X0 = 14;      // origin x (viewBox units)
 const AXIS_Y = 18;  // the x-axis doubles as the name underline
@@ -68,8 +69,9 @@ const yAxisD = `M ${X0} 2 V 112 M ${X0 - 3} 40 H ${X0 + 3} M ${X0 - 3} 70 H ${X0
     </div>
     <div class="actions">
       <a class="btn btn-primary" href="#work">View work</a>
-      <a class="btn btn-ghost" href="mailto:ibtisam115@gmail.com">Email me</a>
-      <a class="btn btn-ghost" href="/resume.pdf" target="_blank" rel="noopener">View résumé</a>
+      {BOOKING && <a class="btn btn-ghost" href={BOOKING} target="_blank" rel="noopener">{BOOKING_LABEL}</a>}
+      <a class="btn btn-ghost" href={EMAIL_HREF}>Email me</a>
+      <a class="btn btn-ghost" href={RESUME} target="_blank" rel="noopener">View résumé</a>
     </div>
     </div>
   </div>

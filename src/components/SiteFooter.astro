@@ -1,18 +1,25 @@
 ---
 // Footer closes on the portfolio's central idea — and, on every page, a working
 // contact path: the maximum scroll depth is never a dead end.
+import { BOOKING, EMAIL_HREF, GITHUB, LINKEDIN, RESUME } from '../data/contact';
 ---
 <footer class="footer">
   <div class="container footer-inner">
     <p class="mono muted">drawn from first principles.</p>
     <p class="mono footer-links">
-      <a href="mailto:ibtisam115@gmail.com">email</a>
+      {BOOKING && (
+        <>
+          <a href={BOOKING} target="_blank" rel="noopener">book a call</a>
+          <span class="muted" aria-hidden="true"> · </span>
+        </>
+      )}
+      <a href={EMAIL_HREF}>email</a>
       <span class="muted" aria-hidden="true"> · </span>
-      <a href="https://github.com/Ibtisam-Mohammad">github</a>
+      <a href={GITHUB}>github</a>
       <span class="muted" aria-hidden="true"> · </span>
-      <a href="https://www.linkedin.com/in/ibtim/">linkedin</a>
+      <a href={LINKEDIN}>linkedin</a>
       <span class="muted" aria-hidden="true"> · </span>
-      <a href="/resume.pdf" target="_blank" rel="noopener">résumé</a>
+      <a href={RESUME} target="_blank" rel="noopener">résumé</a>
     </p>
     <p class="mono muted">© 2026 Ibtisam Mohammad</p>
   </div>

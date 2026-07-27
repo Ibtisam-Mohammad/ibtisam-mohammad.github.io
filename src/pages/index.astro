@@ -9,6 +9,7 @@ import Mlops from '../sections/Mlops.astro';
 import CaseStudies from '../sections/CaseStudies.astro';
 import NotesGarden from '../sections/NotesGarden.astro';
 import Contact from '../sections/Contact.astro';
+import { EMAIL_HREF, GITHUB, LINKEDIN } from '../data/contact';
 
 const siteUrl = new URL('/', Astro.site).href;
 const personId = `${siteUrl}#person`;
@@ -42,7 +43,7 @@ const structuredData = {
       name: 'Ibtisam Mohammad',
       alternateName: 'Ibtisam',
       url: siteUrl,
-      email: 'mailto:ibtisam115@gmail.com',
+      email: EMAIL_HREF,
       jobTitle: 'AI Engineer',
       description: 'AI engineer and physicist building production computer vision, generative AI, agentic workflows, and MLOps systems.',
       worksFor: {
@@ -65,10 +66,7 @@ const structuredData = {
         'Physics',
         'Mathematics',
       ],
-      sameAs: [
-        'https://github.com/Ibtisam-Mohammad',
-        'https://www.linkedin.com/in/ibtim/',
-      ],
+      sameAs: [GITHUB, LINKEDIN],
       subjectOf: {
         '@type': 'DigitalDocument',
         name: 'Ibtisam Mohammad resume',

@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import TurtleMark from '../../components/TurtleMark.astro';
 import { notes, type Note } from '../../data/notes';
+import { BOOKING, EMAIL, EMAIL_HREF, RESUME } from '../../data/contact';
 
 export function getStaticPaths() {
   return notes.map((note) => ({ params: { slug: note.slug }, props: { note } }));
@@ -180,9 +181,15 @@ const structuredData = {
             open to full-time roles and contract work.
           </p>
           <p class="mono note-hire-links">
-            <a href="mailto:ibtisam115@gmail.com">ibtisam115@gmail.com</a>
+            {BOOKING && (
+              <>
+                <a href={BOOKING} target="_blank" rel="noopener">book a call</a>
+                <span class="muted" aria-hidden="true"> · </span>
+              </>
+            )}
+            <a href={EMAIL_HREF}>{EMAIL}</a>
             <span class="muted" aria-hidden="true"> · </span>
-            <a href="/resume.pdf" target="_blank" rel="noopener">résumé</a>
+            <a href={RESUME} target="_blank" rel="noopener">résumé</a>
             <span class="muted" aria-hidden="true"> · </span>
             <a href="/#work">case studies</a>
           </p>

@@ -3,6 +3,7 @@
 // site's only hand-lettered element, and the page's conversion block lives here —
 // explicit availability, a copy-able email, and every link a buyer needs.
 import SectionHeader from '../components/SectionHeader.astro';
+import { BOOKING, BOOKING_LABEL, EMAIL, EMAIL_HREF, GITHUB, LINKEDIN, RESUME } from '../data/contact';
 ---
 <section id="contact" class="section" style="--accent: var(--ink-soft)" aria-labelledby="contact-title">
   <div class="container">
@@ -33,18 +34,24 @@ import SectionHeader from '../components/SectionHeader.astro';
     </p>
 
     <div class="contact-actions" data-vine-exclude>
-      <a class="btn btn-primary" href="mailto:ibtisam115@gmail.com">Email me</a>
-      <a class="btn btn-ghost" href="/resume.pdf" target="_blank" rel="noopener">View résumé</a>
+      {BOOKING && <a class="btn btn-primary" href={BOOKING} target="_blank" rel="noopener">{BOOKING_LABEL}</a>}
+      <a class={BOOKING ? 'btn btn-ghost' : 'btn btn-primary'} href={EMAIL_HREF}>Email me</a>
+      <a class="btn btn-ghost" href={RESUME} target="_blank" rel="noopener">View résumé</a>
       <p class="mono muted">PDF · two pages</p>
     </div>
+    {BOOKING && (
+      <p class="mono muted book-note" data-vine-exclude>
+        30 minutes, video, pick any slot that suits your timezone.
+      </p>
+    )}
     <ul class="contact-links" role="list" data-vine-exclude>
       <li class="mono">
         <span class="muted">Email&nbsp;&nbsp;·</span>
-        <a href="mailto:ibtisam115@gmail.com">ibtisam115@gmail.com</a>
-        <button type="button" class="copy-email mono" data-copy-email="ibtisam115@gmail.com" hidden>copy</button>
+        <a href={EMAIL_HREF}>{EMAIL}</a>
+        <button type="button" class="copy-email mono" data-copy-email={EMAIL} hidden>copy</button>
       </li>
-      <li class="mono"><span class="muted">GitHub&nbsp;&nbsp;·</span> <a href="https://github.com/Ibtisam-Mohammad">github.com/Ibtisam-Mohammad</a></li>
-      <li class="mono"><span class="muted">LinkedIn&nbsp;&nbsp;·</span> <a href="https://www.linkedin.com/in/ibtim/">linkedin.com/in/ibtim</a></li>
+      <li class="mono"><span class="muted">GitHub&nbsp;&nbsp;·</span> <a href={GITHUB}>github.com/Ibtisam-Mohammad</a></li>
+      <li class="mono"><span class="muted">LinkedIn&nbsp;&nbsp;·</span> <a href={LINKEDIN}>linkedin.com/in/ibtim</a></li>
       <li class="mono"><span class="muted">Notes&nbsp;&nbsp;·</span> <a href="/#notes">field notes</a></li>
     </ul>
     <p class="mono muted location" data-vine-exclude>Ibtisam Mohammad · Srinagar, Jammu &amp; Kashmir, India · UTC+05:30</p>
@@ -115,6 +122,7 @@ import SectionHeader from '../components/SectionHeader.astro';
     gap: var(--s-4);
     margin-block: var(--s-5) var(--s-6);
   }
+  .book-note { margin-top: calc(-1 * var(--s-4)); margin-bottom: var(--s-6); }
   .contact-links {
     display: grid;
     gap: var(--s-3);

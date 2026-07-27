@@ -3,8 +3,9 @@
 // Strict template: Problem → Approach → Result → stack → link, now with taped-frame
 // screenshot reveals (§8 variant 3: the turtle draws a frame plus two tape corners;
 // the screenshot fades in immediately — calm and instant) and connective arrows
-// Problem → Approach → Result on the lead card only (built at runtime in work.js).
+// Problem → Approach → Result on every card (built at runtime in sections.js).
 import SectionHeader from '../components/SectionHeader.astro';
+import { BOOKING, BOOKING_LABEL, EMAIL_HREF, RESUME } from '../data/contact';
 import { mulberry32, wobbleRect } from '../lib/draw.mjs';
 
 const rand = mulberry32(20260715);
@@ -111,8 +112,9 @@ const TAPE_BR = 'M 462 344 L 516 290 L 540 314 L 486 368 Z';
     <div class="cs-cta" data-vine-exclude>
       <p class="cs-cta-line">Need results like these on your system?</p>
       <div class="cs-cta-actions">
-        <a class="btn btn-primary" href="mailto:ibtisam115@gmail.com">Email me</a>
-        <a class="btn btn-ghost" href="/resume.pdf" target="_blank" rel="noopener">View résumé</a>
+        {BOOKING && <a class="btn btn-primary" href={BOOKING} target="_blank" rel="noopener">{BOOKING_LABEL}</a>}
+        <a class={BOOKING ? 'btn btn-ghost' : 'btn btn-primary'} href={EMAIL_HREF}>Email me</a>
+        <a class="btn btn-ghost" href={RESUME} target="_blank" rel="noopener">View résumé</a>
       </div>
     </div>
   </div>
