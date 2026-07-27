@@ -273,8 +273,6 @@ main { position: relative; z-index: var(--z-content); }
 .stat-label { font-family: var(--font-mono); font-size: var(--step--1); letter-spacing: 0.06em; color: var(--ink-soft); }
 
 /* ---------- KaTeX sizing ---------- */
-.equation { margin-block: var(--s-4); overflow-x: auto; overflow-y: hidden; }
-.equation .katex-display { margin: 0; }
 
 /* ---------- turtle + vine layers (plan.md §3) — JS + motion only ---------- */
 #turtle-layer,
