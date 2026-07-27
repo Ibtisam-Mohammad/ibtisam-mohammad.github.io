@@ -4,33 +4,34 @@
 // vector-field patch in the left margin, gradient-descent contours as the literal
 // bridge to the next section, and an annotated equation (underline, circle, arrow
 // to a margin note). All geometry generated at build; the engine draws it on scroll.
-import 'katex/dist/katex.min.css';
 import SectionHeader from '../components/SectionHeader.astro';
-import Equation from '../components/Equation.astro';
 import { mulberry32, wobbleEllipse } from '../lib/draw.mjs';
 
 const rand = mulberry32(20260712);
 
+// working habits with receipts, not formulas: each card is something the owner can
+// talk about from shipped work for as long as anyone cares to ask — never a
+// blackboard derivation waiting to be demanded in an interview
 const cards = [
   {
     name: 'Mechanics',
-    tex: String.raw`S[q] = \int_{t_0}^{t_1} L(q, \dot{q}, t)\, dt`,
-    line: 'Variational thinking trained me to turn system behavior into objectives, constraints, and measurable outcomes.',
+    habit: 'Write the system down before touching it.',
+    line: 'Every service starts as boxes, arrows, and failure modes on paper. The 25-second API became sub-second only after every hop was measured — config came last.',
   },
   {
     name: 'Linear algebra',
-    tex: String.raw`A = U \Sigma V^{\top}`,
-    line: 'The geometry behind embeddings, image features, and model representations is often the shortest path to a useful diagnosis.',
+    habit: 'Trust the geometry.',
+    line: 'Most model bugs show up in the embeddings before they show up in the metrics. DINO similarity checks caught camera tampering that pixel thresholds missed.',
   },
   {
     name: 'Probability',
-    tex: String.raw`p(\theta \mid x) = \frac{p(x \mid \theta)\, p(\theta)}{p(x)}`,
-    line: 'Evaluation is evidence: confidence, uncertainty, and failure cases matter more than a single headline score.',
+    habit: 'Metrics are measurements, not scores.',
+    line: 'A number without its failure cases is decoration. The eval suites I build report confidence and where the model breaks, not just the headline.',
   },
   {
     name: 'Optimization',
-    tex: String.raw`\theta_{t+1} = \theta_t - \eta\, \nabla_{\theta} \mathcal{L}(\theta_t)`,
-    line: 'Training is an iterative system: follow the gradient, respect the step size, and inspect what the loss leaves out.',
+    habit: 'Change one thing, measure, repeat.',
+    line: 'Training runs, latency work, cost cuts — the loop is identical: adjust a single variable, watch the trace, keep what the data keeps.',
   },
 ];
 
@@ -105,8 +106,8 @@ const [endX, endY] = optimizerSvgSteps.at(-1)!;
         The master's turned interest into a decision. Working in theoretical nuclear
         physics, I did the arithmetic: a physicist now inherits some four hundred years
         of accumulated theory before reaching the frontier, and the pile grows every
-        day. No single head keeps up with that pace — but our tools might. I enrolled
-        at Univ.AI and switched to building them.
+        day. No single head keeps up with that pace — but our tools might. So I
+        switched to building the tools.
       </p>
       <p>
         The physics stayed. Define the system, make the assumptions visible, test where
@@ -122,7 +123,7 @@ const [endX, endY] = optimizerSvgSteps.at(-1)!;
       {cards.map((c) => (
         <li class="card foundation-card">
           <h3>{c.name}</h3>
-          <Equation tex={c.tex} />
+          <p class="habit">{c.habit}</p>
           <p class="muted">{c.line}</p>
         </li>
       ))}
@@ -226,7 +227,18 @@ const [endX, endY] = optimizerSvgSteps.at(-1)!;
     letter-spacing: 0.08em;
     color: var(--ink-soft);
   }
-  .foundation-card .muted { font-size: var(--step-0); }
+  .foundation-card .habit {
+    margin-top: var(--s-3);
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: var(--step-1);
+    line-height: 1.3;
+    color: var(--ink);
+  }
+  .foundation-card .muted {
+    margin-top: var(--s-3);
+    font-size: var(--step-0);
+  }
 
   .fnd-contours {
     margin: var(--s-8) auto calc(-1 * var(--s-6));
