@@ -200,18 +200,28 @@ export function initSectionScenes() {
         arrowSvg.setAttribute('viewBox', `0 0 ${Math.round(rowsRect.width)} ${Math.round(rowsRect.height)}`);
         const dts = [...rows.querySelectorAll('dt')].slice(0, 3);
         this.paths = [];
+        this.heads = [];
         for (let i = 0; i < dts.length - 1; i++) {
           const a = dts[i].getBoundingClientRect();
           const b = dts[i + 1].getBoundingClientRect();
           const x = a.left - rowsRect.left + 16;
           const y1 = a.bottom - rowsRect.top + 6;
           const y2 = b.top - rowsRect.top - 6;
-          const d = `M ${x} ${y1} C ${x - 15} ${y1 + (y2 - y1) * 0.4}, ${x - 15} ${y1 + (y2 - y1) * 0.6}, ${x} ${y2} M ${x} ${y2} l -6 -7 M ${x} ${y2} l 7 -5`;
-          const p = document.createElementNS(NS, 'path');
-          p.setAttribute('d', d);
-          p.setAttribute('data-draw', '');
-          arrowSvg.appendChild(p);
-          this.paths.push(p);
+          // Shaft and head are SEPARATE elements. On one path the head's two strokes
+          // are their own subpaths, and SVG restarts the dash pattern at each subpath:
+          // every subpath inks at rate len(total) * t, so the ~9-unit head completed at
+          // 4% progress and then hung in space for the remaining 88% of the shaft's
+          // draw. The head now fades in as its shaft lands instead.
+          const shaft = document.createElementNS(NS, 'path');
+          shaft.setAttribute('d', `M ${x} ${y1} C ${x - 15} ${y1 + (y2 - y1) * 0.4}, ${x - 15} ${y1 + (y2 - y1) * 0.6}, ${x} ${y2}`);
+          shaft.setAttribute('data-draw', '');
+          arrowSvg.appendChild(shaft);
+          this.paths.push(shaft);
+
+          const head = document.createElementNS(NS, 'path');
+          head.setAttribute('d', `M ${x} ${y2} l -6 -7 M ${x} ${y2} l 7 -5`);
+          arrowSvg.appendChild(head);
+          this.heads.push(head);
         }
         rows.appendChild(arrowSvg);
         preparePaths(arrowSvg);
@@ -220,6 +230,12 @@ export function initSectionScenes() {
         if (s === this._last) return;
         this._last = s;
         drawSequence(this.paths, s, 0.3, 0.9);
+        // mirror drawSequence's slicing so each head resolves with its own shaft
+        const width = 0.6 / Math.max(this.heads.length, 1);
+        for (let i = 0; i < this.heads.length; i++) {
+          const end = 0.3 + (i + 1) * width;
+          this.heads[i].style.opacity = String(smooth(seg(s, end - width * 0.4, end)));
+        }
       },
     });
   }

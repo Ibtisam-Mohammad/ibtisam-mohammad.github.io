@@ -426,7 +426,7 @@ html.anim .sh-svg {
   transform-origin: center;
 }
 
-/* runtime-built Problem→Approach→Result arrows on the lead case study (work scene) */
+/* runtime-built Problem→Approach→Result arrows on every case card (work scene) */
 .cs-rows { position: relative; }
 .cs-arrows {
   position: absolute;
