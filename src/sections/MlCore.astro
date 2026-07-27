@@ -153,7 +153,13 @@ const hullB = wobbleEllipse(888, 198, 56, 40, rand, { wobble: 0.06, rot: 0.2 });
     justify-content: space-between;
     gap: var(--s-4);
     align-items: baseline;
+    /* the global `p { max-width: var(--measure) }` measure rule is for prose; on this
+       ledger row it clamped the flex box short of the rule, stranding every date
+       ~440px inside the border it is supposed to align with */
+    max-width: none;
   }
+  /* the role title still wants a sane measure when it wraps */
+  .experience-list li > p:first-child strong { max-width: 46ch; }
   .experience-list li > p + p { margin-top: var(--s-2); max-width: 72ch; }
   @media (max-width: 719px) {
     .experience-list li > p:first-child { display: grid; gap: var(--s-1); }
