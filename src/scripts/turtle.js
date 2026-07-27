@@ -51,11 +51,18 @@ function docRect(el) {
   return { top: r.top + y, bottom: r.bottom + y, left: r.left, right: r.right, width: r.width, height: r.height };
 }
 
+// How far outside the text column the travel lane sits on desktop. The lane used to
+// be the gutter's midpoint, which scales with the window: ~174px out at 1800px and
+// ~360px at 2560px, so on a wide monitor the vine detached from the writing and read
+// as a stray rule at the edge of the screen. A bounded gap keeps it beside the text
+// at every width; the inset clamp still applies when the gutter is narrower than this.
+const LANE_GAP = 104;
+
 function laneX(side, docW, contentRect, mobile) {
   const inset = mobile ? 40 : 36;
   if (mobile) return docW - inset;
-  if (side === 'L') return Math.max(contentRect.left / 2, inset);
-  if (side === 'R') return Math.min((docW + contentRect.right) / 2, docW - inset);
+  if (side === 'L') return Math.max(contentRect.left - LANE_GAP, inset);
+  if (side === 'R') return Math.min(contentRect.right + LANE_GAP, docW - inset);
   return docW / 2;
 }
 

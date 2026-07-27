@@ -22,9 +22,16 @@ for (let x = X0 + 4; x <= SINE_END; x += 4) {
 }
 sineD += ` L 588 ${AXIS_Y}`;
 
-// light axes with plotter ticks
-const xAxisD = `M 6 ${AXIS_Y} H 985 M 200 ${AXIS_Y - 3} V ${AXIS_Y + 3} M 400 ${AXIS_Y - 3} V ${AXIS_Y + 3} M 600 ${AXIS_Y - 3} V ${AXIS_Y + 3} M 800 ${AXIS_Y - 3} V ${AXIS_Y + 3}`;
-const yAxisD = `M ${X0} 2 V 112 M ${X0 - 3} 40 H ${X0 + 3} M ${X0 - 3} 70 H ${X0 + 3} M ${X0 - 3} 100 H ${X0 + 3}`;
+// Light axes, one continuous subpath each. The plotter ticks are a SEPARATE path
+// revealed by opacity, because SVG restarts the dash pattern at every subpath: ticks
+// sharing a data-draw path with their axis ink all at once and float detached from
+// the line they belong to, at any progress below 100%.
+const xAxisD = `M 6 ${AXIS_Y} H 985`;
+const yAxisD = `M ${X0} 2 V 112`;
+const ticksD = [
+  ...[200, 400, 600, 800].map((x) => `M ${x} ${AXIS_Y - 3} V ${AXIS_Y + 3}`),
+  ...[40, 70, 100].map((y) => `M ${X0 - 3} ${y} H ${X0 + 3}`),
+].join(' ');
 ---
 <section id="hero" class="section hero" style="--accent: var(--cobalt)">
   <div class="hero-pin">
@@ -40,6 +47,7 @@ const yAxisD = `M ${X0} 2 V 112 M ${X0 - 3} 40 H ${X0 + 3} M ${X0 - 3} 70 H ${X0
     <svg class="hero-scene" viewBox="0 0 1000 120" aria-hidden="true">
       <path data-part="axis" data-draw d={yAxisD} class="axis" />
       <path data-part="axis" data-draw d={xAxisD} class="axis" />
+      <path data-part="ticks" d={ticksD} class="axis" />
       <path data-part="sine" data-draw d={sineD} class="sine" />
       <circle data-part="dot" cx={X0} cy={AXIS_Y} r="5.5" class="origin-dot" />
     </svg>
@@ -141,7 +149,9 @@ const yAxisD = `M ${X0} 2 V 112 M ${X0 - 3} 40 H ${X0 + 3} M ${X0 - 3} 70 H ${X0
   .thesis {
     margin-top: var(--s-5);
     font-size: clamp(1.25rem, 1.14rem + 0.5vw, 1.625rem);
-    max-width: 34ch;
+    /* 34ch wrapped the positioning statement to three cramped lines inside an
+       otherwise empty viewport; 44ch settles it into two and reads more assured */
+    max-width: 44ch;
   }
   .roles { margin-top: var(--s-4); }
   .hero-proof {
