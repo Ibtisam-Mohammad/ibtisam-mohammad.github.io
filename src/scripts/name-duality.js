@@ -183,17 +183,19 @@ export function initNameDuality() {
     if (!state.frame) state.frame = requestAnimationFrame(tick);
   }
 
-  target.addEventListener('pointerenter', () => animateTo(1));
-  target.addEventListener('pointerleave', () => animateTo(0));
-
   const resizeObserver = new ResizeObserver(() => {
     buildParticles();
     if (state.progress > 0) render();
   });
 
+  // listeners attach only once particles exist: hovering during font load would
+  // otherwise fade the real name to 12% with nothing drawn in its place
   document.fonts.ready.then(() => {
     buildParticles();
+    if (!state.particles.length) return; // canvas unavailable: leave the name alone
     target.classList.add('is-duality-ready');
+    target.addEventListener('pointerenter', () => animateTo(1));
+    target.addEventListener('pointerleave', () => animateTo(0));
     resizeObserver.observe(label);
   });
 }

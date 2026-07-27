@@ -84,9 +84,13 @@ function initOptimizerLab() {
     const usesMomentum = mode === 'momentum';
     momentumInput.disabled = !usesMomentum;
     momentumControl.classList.toggle('is-disabled', !usesMomentum);
+    const [lastX, lastY] = points.at(-1);
+    const diverged = !Number.isFinite(lastX + lastY) || Math.abs(lastX) > 12 || Math.abs(lastY) > 12;
     const finalLoss = loss(points.at(-1));
     const lossLabel = finalLoss < 0.001 ? '<0.001' : finalLoss.toFixed(finalLoss < 1 ? 3 : 1);
-    status.textContent = `${usesMomentum ? 'Momentum' : 'SGD'} / ${points.length - 1} updates / loss ${lossLabel}`;
+    status.textContent = diverged
+      ? `${usesMomentum ? 'Momentum' : 'SGD'} / diverged after ${points.length - 1} updates — step size too large`
+      : `${usesMomentum ? 'Momentum' : 'SGD'} / ${points.length - 1} updates / loss ${lossLabel}`;
   };
 
   const pointFromEvent = (event) => {
@@ -165,6 +169,19 @@ function initDetectionThreshold() {
     detections.forEach((detection) => {
       const visible = Number(detection.dataset.confidence) >= threshold;
       detection.classList.toggle('is-filtered', !visible);
+      // the draw engine writes an inline stroke-dasharray on [data-draw] paths,
+      // which beats the .is-filtered CSS rule — apply the dashed state inline too
+      const box = detection.querySelector('.cv-box');
+      if (box) {
+        if (!visible) {
+          box.style.strokeDasharray = '12 10';
+          box.style.strokeDashoffset = '0';
+        } else if (box.dataset.len) {
+          box.style.strokeDasharray = `${box.dataset.len} ${Number(box.dataset.len) * 3}`;
+        } else {
+          box.style.strokeDasharray = '';
+        }
+      }
       retained += Number(visible);
     });
     valueOutput.textContent = threshold.toFixed(2);
@@ -234,6 +251,7 @@ function initDefenceAtlas() {
   const title = root.querySelector('[data-defence-title]');
   const description = root.querySelector('[data-defence-description]');
   const related = root.querySelector('[data-defence-related]');
+  const announce = root.querySelector('[data-defence-announce]');
   if (!nodes.length || !indexOutput || !title || !description || !related) return;
 
   let pinned = nodes.find((node) => node.getAttribute('aria-pressed') === 'true') || nodes[0];
@@ -251,6 +269,8 @@ function initDefenceAtlas() {
     pinned = node;
     nodes.forEach((candidate) => candidate.setAttribute('aria-pressed', String(candidate === node)));
     preview(node);
+    // deliberate selections announce; transient hover previews stay visual-only
+    if (announce) announce.textContent = `Selected: ${node.dataset.title}`;
   };
 
   nodes.forEach((node) => {

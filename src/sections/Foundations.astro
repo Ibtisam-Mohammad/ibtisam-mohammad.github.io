@@ -15,7 +15,7 @@ const cards = [
   {
     name: 'Mechanics',
     tex: String.raw`S[q] = \int_{t_0}^{t_1} L(q, \dot{q}, t)\, dt`,
-    line: 'Variational thinking trained me to turn system behaviour into objectives, constraints, and measurable outcomes.',
+    line: 'Variational thinking trained me to turn system behavior into objectives, constraints, and measurable outcomes.',
   },
   {
     name: 'Linear algebra',
@@ -52,7 +52,7 @@ for (let r = 0; r < 5; r++) {
   }
 }
 
-// An anisotropic quadratic gives the drawing real optimizer behaviour while the
+// An anisotropic quadratic gives the drawing real optimizer behavior while the
 // hand-wobbled contours keep it in the site's notebook language.
 const OPT = { cx: 320, cy: 178, sx: 88, sy: 72 };
 const contours = [255, 203, 151, 101, 54].map((rx) =>
@@ -187,7 +187,9 @@ const [endX, endY] = optimizerSvgSteps.at(-1)!;
         </fieldset>
         <label class="optimizer-range mono">
           <span>learning rate <output data-opt-rate>0.14</output></span>
-          <input data-opt-rate-input type="range" min="0.04" max="0.28" step="0.01" value="0.14" disabled />
+          <!-- range reaches past 2/λmax ≈ 0.84 so plain SGD can genuinely diverge,
+               as the caption promises; momentum's larger stability region survives -->
+          <input data-opt-rate-input type="range" min="0.04" max="0.92" step="0.02" value="0.14" disabled />
         </label>
         <label class="optimizer-range mono" data-opt-momentum-control>
           <span>momentum <output data-opt-momentum>0.68</output></span>

@@ -87,6 +87,23 @@ function distToText(ranges, contentRect, x, y) {
   return best;
 }
 
+// hard no-spawn zones: conversion-critical blocks (CTAs, contact links, the notes
+// graph) opt out via data-vine-exclude — foliage must never sit on the elements a
+// buyer needs to read or click
+function excludeRects() {
+  return [...document.querySelectorAll('[data-vine-exclude]')].map((element) => {
+    const r = element.getBoundingClientRect();
+    return { left: r.left, right: r.right, top: r.top + window.scrollY, bottom: r.bottom + window.scrollY };
+  });
+}
+
+function inExclusion(rects, x, y, pad) {
+  for (const r of rects) {
+    if (x > r.left - pad && x < r.right + pad && y > r.top - pad && y < r.bottom + pad) return true;
+  }
+  return false;
+}
+
 function stemD(length, bend) {
   return `M0 0 Q ${(length * 0.45).toFixed(1)} ${(bend * 0.7).toFixed(1)}, ${(length * 0.8).toFixed(1)} ${(bend * 0.4).toFixed(1)} T ${length.toFixed(1)} ${(bend * 0.55).toFixed(1)}`;
 }
@@ -265,6 +282,7 @@ export function measureVine(info) {
   const docW = document.documentElement.clientWidth;
   const mobile = docW < 720;
   const ranges = sectionRanges();
+  const excludes = excludeRects();
   const content = document.querySelector('.container')?.getBoundingClientRect();
   if (!content) return;
 
@@ -303,6 +321,10 @@ export function measureVine(info) {
     length *= 0.4 + 0.6 * proximity;
     const room = away < 0 ? point.x - 8 : docW - point.x - 8;
     length = Math.min(length, Math.max(room, 8));
+
+    // never sprout where a buyer needs to read or click — sub-branches extend well
+    // past the trunk, so the clearance uses full potential reach, not trunk length
+    if (inExclusion(excludes, point.x, point.y, length * 1.8 + 24)) continue;
 
     const palette = accentAt(ranges, point.y);
     const angle = Math.atan2(ny, nx) * 180 / Math.PI + (rand() - 0.5) * 44;

@@ -59,8 +59,13 @@ export function initGenAiScene() {
       if (frame) setDraw(frame, seg(s, 0.08, 0.76));
       if (!system?.dataset.stagePinned) {
         const active = Math.min(stages.length - 1, Math.floor(s * stages.length));
-        stages.forEach((stage, index) => stage.classList.toggle('is-active', index === active));
-        stageControls.forEach((control, index) => control.setAttribute('aria-pressed', String(index === active)));
+        // only touch classes/ARIA when the active stage actually changes — writing
+        // aria-pressed every scrolled frame is churn for assistive tech
+        if (active !== this._activeStage) {
+          this._activeStage = active;
+          stages.forEach((stage, index) => stage.classList.toggle('is-active', index === active));
+          stageControls.forEach((control, index) => control.setAttribute('aria-pressed', String(index === active)));
+        }
       }
 
       // diffusion-trajectory doodle: curve, then dots converge along it

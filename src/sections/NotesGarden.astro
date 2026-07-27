@@ -126,7 +126,10 @@ const defenceCenter = { x: 350, y: 184 };
           ))}
         </svg>
 
-        <div class="defence-detail" aria-live="polite">
+        <!-- no aria-live here: hover previews rewrite this panel constantly, which
+             would spam screen readers; pinned selections announce via the SR-only
+             region below instead -->
+        <div class="defence-detail">
           <p class="mono muted" data-defence-index>01 / 06</p>
           <h3 data-defence-title>{defenceDomains[0].label}</h3>
           <p data-defence-description>{defenceDomains[0].description}</p>
@@ -136,6 +139,7 @@ const defenceCenter = { x: 350, y: 184 };
             <a href="https://github.com/Ibtisam-Mohammad/awesome-defense">browse the repository &#8599;</a>
           </div>
         </div>
+        <span class="visually-hidden" aria-live="polite" data-defence-announce></span>
       </div>
     </section>
 
@@ -154,7 +158,7 @@ const defenceCenter = { x: 350, y: 184 };
         ))}
       </ol>
 
-      <figure class="notes-graph-wrap">
+      <figure class="notes-graph-wrap" data-vine-exclude>
         <svg class="notes-graph" viewBox="0 0 300 340" role="group" aria-label="Notes topic graph — activate a topic to highlight matching notes">
           {edges.map((d) => <path data-draw class="ng-edge" d={d} />)}
           {nodes.map((n) => (
@@ -172,9 +176,9 @@ const defenceCenter = { x: 350, y: 184 };
             </g>
           ))}
         </svg>
-        <figcaption class="mono muted">the graph is an index — tap a topic.</figcaption>
+        <figcaption class="mono muted">The graph is an index — select a topic.</figcaption>
       </figure>
-      <p class="mono muted diary-link">seven notes · written and hosted here</p>
+      <p class="mono muted diary-link">{notes.length} notes · written and hosted here</p>
     </div>
   </div>
 </section>
@@ -311,6 +315,11 @@ const defenceCenter = { x: 350, y: 184 };
   }
   .ng-node:focus { outline: none; }
   .ng-node text {
+    /* paper halo keeps labels legible over trail strands and sprigs */
+    paint-order: stroke;
+    stroke: var(--paper);
+    stroke-width: 3.5px;
+    stroke-linejoin: round;
     font-family: var(--font-mono);
     font-size: 10.5px;
     letter-spacing: 0.04em;

@@ -22,6 +22,8 @@ export interface Note {
   kind: string;
   dek: string;
   published: string;
+  /** site write-up / last revision date (differs from published for retrospectives) */
+  modified?: string;
   accent: Accent;
   tags: NoteTag[];
   sourceUrl: string;
@@ -32,7 +34,8 @@ export interface Note {
 export const notes: Note[] = [
   {
     slug: 'fara-7b-on-12gb-vram',
-    published: '2026-07-13',
+    published: '2025-12-24',
+    modified: '2026-07-27',
     title: 'Fitting a 7B agent into 12 GB of VRAM',
     kind: 'field note',
     dek: 'Running a vision-language computer-use agent locally by splitting GPU inference on Windows from browser automation in WSL.',
@@ -82,7 +85,8 @@ export const notes: Note[] = [
   },
   {
     slug: 'voice-driven-point-of-sale',
-    published: '2026-07-13',
+    published: '2025-11-22',
+    modified: '2026-07-27',
     title: 'Voice-driven point of sale',
     kind: 'project note',
     dek: 'Turning spoken orders and photographed receipts into structured operations without confusing an AI interpretation with a completed transaction.',
@@ -101,12 +105,12 @@ export const notes: Note[] = [
       {
         heading: 'The product loop',
         blocks: [
-          { type: 'list', items: ['Capture the spoken order in the browser.', 'Use Gemini to convert the utterance into structured line items.', 'Resolve names and variants against the inventory catalogue.', 'Present ambiguities or unavailable items before checkout.', 'Commit the confirmed order and update history, stock, customer data, and analytics.'] },
+          { type: 'list', items: ['Capture the spoken order in the browser.', 'Use Gemini to convert the utterance into structured line items.', 'Resolve names and variants against the inventory catalog.', 'Present ambiguities or unavailable items before checkout.', 'Commit the confirmed order and update history, stock, customer data, and analytics.'] },
           { type: 'p', text: 'The same structured-extraction pattern supports receipt images. Gemini parses a photographed receipt into candidate stock updates, which can then be reviewed before inventory changes.' },
         ],
       },
       {
-        heading: 'State is the real centre',
+        heading: 'State is the real center',
         blocks: [
           { type: 'p', text: 'The Angular application separates audio recording, order processing, inventory, customers, history, analytics, and notifications into components and services. A shared POS state coordinates the workflow. That separation matters because model output is only one event in a larger transaction system.' },
           { type: 'p', text: 'A useful implementation keeps raw model responses, normalized candidates, validation errors, and committed records distinct. That makes corrections possible and prevents a fluent response from silently becoming business data.' },
@@ -115,7 +119,7 @@ export const notes: Note[] = [
       {
         heading: 'What production would require',
         blocks: [
-          { type: 'list', items: ['Move model credentials and transaction writes behind an authenticated server.', 'Use catalogue IDs rather than product-name strings as the durable key.', 'Add confirmation for low-confidence matches and destructive inventory changes.', 'Record an audit trail from transcript to interpreted order to final transaction.', 'Evaluate with noisy speech, accents, corrections, compound orders, and out-of-stock variants.'] },
+          { type: 'list', items: ['Move model credentials and transaction writes behind an authenticated server.', 'Use catalog IDs rather than product-name strings as the durable key.', 'Add confirmation for low-confidence matches and destructive inventory changes.', 'Record an audit trail from transcript to interpreted order to final transaction.', 'Evaluate with noisy speech, accents, corrections, compound orders, and out-of-stock variants.'] },
           { type: 'p', text: 'Voice can reduce interaction cost, but only if uncertainty is visible. The design goal is not a cashier-shaped chatbot; it is a faster path to a correct transaction.' },
         ],
       },
@@ -123,7 +127,8 @@ export const notes: Note[] = [
   },
   {
     slug: 'vehicle-wait-time-detector',
-    published: '2026-07-13',
+    published: '2025-11-16',
+    modified: '2026-07-27',
     title: 'Vehicle wait-time detector',
     kind: 'project note',
     dek: 'Why dwell-time measurement is a tracking and state-management problem after the detector has drawn its first box.',
@@ -142,8 +147,8 @@ export const notes: Note[] = [
       {
         heading: 'A small state machine per track',
         blocks: [
-          { type: 'list', items: ['Use the bounding-box centre point to decide whether a vehicle is inside the ROI.', 'Start or resume its timer when the centre enters.', 'Accumulate elapsed time while the track remains inside.', 'Keep state for a configurable lost-frame buffer during short occlusions.', 'Finalize the record when the track exits or expires.'] },
-          { type: 'p', text: 'The centre-point rule is computationally cheap and predictable. It is also a policy choice: for a bus or truck straddling the boundary, area overlap may describe occupancy better than a single point.' },
+          { type: 'list', items: ['Use the bounding-box center point to decide whether a vehicle is inside the ROI.', 'Start or resume its timer when the center enters.', 'Accumulate elapsed time while the track remains inside.', 'Keep state for a configurable lost-frame buffer during short occlusions.', 'Finalize the record when the track exits or expires.'] },
+          { type: 'p', text: 'The center-point rule is computationally cheap and predictable. It is also a policy choice: for a bus or truck straddling the boundary, area overlap may describe occupancy better than a single point.' },
         ],
       },
       {
@@ -164,7 +169,8 @@ export const notes: Note[] = [
   },
   {
     slug: 'yolov11-auto-annotation-cvat',
-    published: '2026-07-13',
+    published: '2025-03-18',
+    modified: '2026-07-27',
     title: 'YOLOv11 auto-annotation for CVAT',
     kind: 'project note',
     dek: 'Wrapping a custom detector in CVAT’s serverless contract so model predictions become editable annotations rather than a separate pipeline.',
@@ -205,7 +211,8 @@ export const notes: Note[] = [
   },
   {
     slug: 'ai-support-refund-agent',
-    published: '2026-07-13',
+    published: '2026-06-19',
+    modified: '2026-07-27',
     title: 'AI support refund agent',
     kind: 'project note',
     dek: 'A tool-calling support agent where the language model can investigate and explain, but a deterministic policy engine owns every financial verdict.',
@@ -252,7 +259,8 @@ export const notes: Note[] = [
   },
   {
     slug: 'open-resources-defence-systems',
-    published: '2026-07-13',
+    published: '2026-06-15',
+    modified: '2026-07-27',
     title: 'Open resources for defence systems',
     kind: 'research note',
     dek: 'Building a navigable map of open and public tools across unmanned systems, sensing, geospatial intelligence, communications, simulation, and command-and-control.',
@@ -293,7 +301,8 @@ export const notes: Note[] = [
   },
   {
     slug: 'multimodal-emotion-recognition',
-    published: '2026-07-13',
+    published: '2023-01-30',
+    modified: '2026-07-27',
     title: 'Multimodal emotion recognition',
     kind: 'project note',
     dek: 'Combining facial-expression signals with speech transcription and sentence sentiment on a shared timeline for audience-reaction analysis.',
@@ -327,7 +336,7 @@ export const notes: Note[] = [
         heading: 'Where the uncertainty lives',
         blocks: [
           { type: 'list', items: ['Facial expression is not equivalent to emotion, especially across people and cultures.', 'Speech recognition errors propagate into sentiment classification.', 'Ten-second windows trade temporal precision for simpler aggregation.', 'Audience composition and camera visibility can bias the visual counts.', 'A useful report should expose modality-level evidence and disagreement.'] },
-          { type: 'p', text: 'The strongest next step would be an evaluation set labelled at the same temporal resolution, with separate metrics for transcription, text sentiment, facial expression, alignment, and the final report.' },
+          { type: 'p', text: 'The strongest next step would be an evaluation set labeled at the same temporal resolution, with separate metrics for transcription, text sentiment, facial expression, alignment, and the final report.' },
         ],
       },
       {

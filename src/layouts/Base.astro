@@ -10,12 +10,15 @@ interface Props {
   description?: string;
   ogType?: 'website' | 'article';
   structuredData?: Record<string, unknown>;
+  /** error pages: emit noindex and no canonical/og:url (a 404 has no canonical URL) */
+  noindex?: boolean;
 }
 const {
   title = 'Ibtisam Mohammad | AI Engineer and Physicist',
   description = 'Portfolio of Ibtisam Mohammad, an AI engineer and physicist building production computer vision, generative AI, agentic workflows, and MLOps systems.',
   ogType = 'website',
   structuredData,
+  noindex = false,
 } = Astro.props;
 const serializedStructuredData = structuredData
   ? JSON.stringify(structuredData).replace(/</g, '\\u003c')
@@ -32,12 +35,19 @@ const serializedStructuredData = structuredData
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content={ogType} />
-    <meta property="og:url" content={new URL(Astro.url.pathname, Astro.site)} />
+    {noindex ? (
+      <meta name="robots" content="noindex" />
+    ) : (
+      <>
+        <meta property="og:url" content={new URL(Astro.url.pathname, Astro.site)} />
+        <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+      </>
+    )}
     <meta property="og:image" content={new URL('/og.png', Astro.site)} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
-    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+    <link rel="alternate" type="application/rss+xml" title="Ibtisam Mohammad — field notes" href={new URL('/rss.xml', Astro.site)} />
     {serializedStructuredData && (
       <script type="application/ld+json" set:html={serializedStructuredData} />
     )}

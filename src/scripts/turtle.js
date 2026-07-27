@@ -134,6 +134,12 @@ function buildRanges() {
 }
 
 export function measureTurtle() {
+  // release the layers before measuring: their previous height would otherwise hold
+  // the document open, so a reflow that SHORTENS content (rotation, window widening)
+  // could never be observed — the page would ratchet longer forever
+  state.layer.style.height = '0px';
+  if (state.vineLayer) state.vineLayer.style.height = '0px';
+
   const docW = document.documentElement.clientWidth;
   const docH = document.documentElement.scrollHeight;
   const vh = window.innerHeight;
@@ -254,6 +260,7 @@ function catmullRomPath(pts, minX, maxX) {
 // inside its safe viewport interval. A backward pass reserves room for later points;
 // the forward pass then stays as close as possible to each scene's authored timing.
 function scheduleWaypointAnchors(waypoints) {
+  if (!waypoints.length) return; // 404/partial pages: no route sections at all
   let rate = 1.8;
   let durations = [];
   let latest = [];

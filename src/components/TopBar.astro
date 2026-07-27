@@ -16,7 +16,7 @@ import TurtleMark from './TurtleMark.astro';
         <li class="nav-notes"><a href="/#notes">Notes</a></li>
         <li><a href="/#contact">Contact</a></li>
         <li>
-          <a class="btn btn-primary btn-bar" href="/resume.pdf" download aria-label="Download résumé">
+          <a class="btn btn-primary btn-bar" href="/resume.pdf" target="_blank" rel="noopener" aria-label="View résumé (PDF)">
             <span class="resume-long">Résumé</span><span class="resume-short" aria-hidden="true">CV</span>
           </a>
         </li>
@@ -31,9 +31,8 @@ import TurtleMark from './TurtleMark.astro';
     position: sticky;
     top: 0;
     z-index: var(--z-bar);
-    background: color-mix(in srgb, var(--paper) 92%, transparent);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    /* fully opaque: translucency let hero CTAs ghost through the wordmark on scroll */
+    background: var(--paper);
     border-bottom: 1px solid var(--line);
   }
   /* scroll-progress hairline, tinted to the current section's accent (plan.md §9) */
@@ -100,7 +99,7 @@ import TurtleMark from './TurtleMark.astro';
     .brand-name { display: none; }
     .topbar-inner { gap: var(--s-2); }
     .topnav { gap: var(--s-1); }
-    .nav-notes { display: none; }
+    /* Notes stays in the nav — the writing is a core credibility asset on phones too */
   }
   @media (max-width: 359px) {
     .resume-long { display: none; }

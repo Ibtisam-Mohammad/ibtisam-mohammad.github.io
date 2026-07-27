@@ -9,7 +9,10 @@ import { registerWaypoints } from '../turtle.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 
+// null-safe: a renamed/removed figure must degrade to "no extra waypoints for this
+// section", never to a TypeError that kills every drawing on the page
 function documentBox(element) {
+  if (!element) return null;
   const r = element.getBoundingClientRect();
   return { left: r.left, right: r.right, width: r.width, height: r.height, top: r.top + window.scrollY };
 }
@@ -25,6 +28,7 @@ function registerSectionWaypoints() {
   registerWaypoints('foundations', (_section, { vh }) => {
     const figure = document.querySelector('.fnd-contours svg');
     const r = documentBox(figure);
+    if (!r) return [];
     return spread([
       { x: r.right + 18, y: r.top + 12, pen: 'up', visible: true },
       { x: r.left + r.width * 0.86, y: r.top + r.height * 0.2, pen: 'down', visible: true },
@@ -36,6 +40,7 @@ function registerSectionWaypoints() {
 
   registerWaypoints('ml', (_section, { vh }) => {
     const r = documentBox(document.querySelector('.ml-scene'));
+    if (!r) return [];
     return spread([
       { x: r.left + r.width * 0.65, y: r.top + r.height * 0.24, pen: 'down', visible: true },
       { x: r.left + r.width * 0.52, y: r.top + r.height * 0.51, pen: 'down', visible: true },
@@ -47,6 +52,7 @@ function registerSectionWaypoints() {
   registerWaypoints('mlops', (_section, { vh }) => {
     const pipeline = [...document.querySelectorAll('.pipeline')].find((svg) => svg.getClientRects().length);
     const r = documentBox(pipeline);
+    if (!r) return [];
     const horizontal = r.width > r.height * 2;
     const points = [];
     for (let i = 0; i < 5; i++) {
@@ -62,6 +68,7 @@ function registerSectionWaypoints() {
 
   registerWaypoints('work', (_section, { vh }) => {
     const r = documentBox(document.querySelector('.cs-shot-frame'));
+    if (!r) return [];
     return spread([
       { x: r.left + 8, y: r.top - 8, pen: 'down', visible: true },
       { x: r.right - 8, y: r.top + 18, pen: 'down', visible: true },
@@ -72,6 +79,7 @@ function registerSectionWaypoints() {
 
   registerWaypoints('notes', (_section, { vh }) => {
     const r = documentBox(document.querySelector('.notes-graph'));
+    if (!r) return [];
     const at = (x, y) => ({ x: r.left + (x / 300) * r.width, y: r.top + (y / 340) * r.height });
     return spread([
       { ...at(150, 62), pen: 'down', visible: true },
@@ -84,6 +92,7 @@ function registerSectionWaypoints() {
 
   registerWaypoints('contact', (_section, { vh }) => {
     const r = documentBox(document.querySelector('.signature'));
+    if (!r) return [];
     return spread([
       { x: r.left + r.width * 0.06, y: r.top + r.height * 0.4, pen: 'down', visible: true },
       { x: r.left + r.width * 0.4, y: r.top + r.height * 0.48, pen: 'down', visible: true },

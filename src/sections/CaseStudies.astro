@@ -14,24 +14,24 @@ const cases = [
   {
     name: 'Multi-stream video security service',
     problem: 'A camera-security product needed real-time detection across multiple CCTV streams while combining plate, face, and mask recognition under production load.',
-    approach: 'Built a FastAPI microservice around YOLOv11 and DETR, integrated the recognition services, and added DINO-embedding checks for camera movement and obstruction. Reworked Nginx and service concurrency around the measured bottlenecks.',
+    approach: 'Built a FastAPI microservice around YOLOv11 and DETR, integrated the recognition services, and added DINO-embedding checks for camera movement and obstruction. Instrumented every hop before touching config, then reworked Nginx and service concurrency around the measured bottlenecks — the same define-measure-test discipline physics trains.',
     result: 'Reduced API latency from roughly 25 seconds to under one second and cut server errors by 95% under high load.',
     resultChips: ['~25 s → <1 s', '−95% errors'],
     stack: ['FastAPI', 'YOLOv11', 'DETR', 'DINO', 'Nginx'],
     shot: '/img/shot-detection.webp',
     shotAlt: 'Illustrated video analytics dashboard with detection boxes, charts, and service metrics',
-    availability: 'private client system',
+    availability: 'DwarfAI · 2024–25',
   },
   {
     name: 'AI assistant for Microsoft Project',
     problem: 'Project teams needed natural-language analysis over live schedules without losing the structure of tasks, dependencies, Gantt workflows, and MPP or XML files.',
-    approach: 'Built the full-stack Microsoft Project add-in with Office.js, authenticated FastAPI endpoints, MongoDB, streaming chat, file handling, schedule reasoning, observability, graph-based evaluation, and end-to-end tests.',
-    result: 'Delivered an integrated assistant that could analyze schedule context, handle project files, and support conversational task and Gantt workflows inside Microsoft Project.',
+    approach: 'Built a full-stack Microsoft Project add-in with Office.js, authenticated FastAPI endpoints, MongoDB, streaming chat, file handling, schedule reasoning, observability, graph-based evaluation, and end-to-end tests.',
+    result: 'Delivered an integrated assistant that analyzes live schedule context, handles MPP and XML project files, and supports conversational task and Gantt workflows inside Microsoft Project.',
     resultChips: ['full-stack add-in', 'evaluated workflows'],
     stack: ['Office.js', 'FastAPI', 'MongoDB', 'LLM services'],
     shot: '/img/shot-assistant.webp',
     shotAlt: 'Illustrated project assistant interface with a task list and contextual chat',
-    availability: 'private client system',
+    availability: 'DwarfAI · 2024–25',
   },
   {
     name: 'AI-assisted class rescheduling',
@@ -42,7 +42,7 @@ const cases = [
     stack: ['Twilio', 'LLM', 'background queues', 'CRM'],
     shot: '/img/shot-pipeline.webp',
     shotAlt: 'Illustrated messaging workflow with automation stages and outcome monitoring',
-    availability: 'private client system',
+    availability: 'Vikara AI · 2026',
   },
 ];
 
@@ -104,9 +104,17 @@ const TAPE_BR = 'M 462 344 L 516 290 L 540 314 L 486 368 Z';
               </svg>
             </div>
           </figure>
-          <p class="mono muted cs-link">Privacy-safe illustration; implementation details are limited by client confidentiality.</p>
         </article>
       ))}
+    </div>
+    <p class="mono muted cs-note">Illustrations are privacy-safe reconstructions — client footage and code stay private.</p>
+    <!-- peak buying intent lives right here, after the results -->
+    <div class="cs-cta" data-vine-exclude>
+      <p class="cs-cta-line">Need results like these on your system?</p>
+      <div class="cs-cta-actions">
+        <a class="btn btn-primary" href="mailto:ibtisam115@gmail.com">Email me</a>
+        <a class="btn btn-ghost" href="/resume.pdf" target="_blank" rel="noopener">View résumé</a>
+      </div>
     </div>
   </div>
 </section>
@@ -146,7 +154,24 @@ const TAPE_BR = 'M 462 344 L 516 290 L 540 314 L 486 368 Z';
   .cs-row dt { letter-spacing: 0.08em; }
   .cs-row dd { margin: 0; }
   .cs-result { font-weight: 600; margin-bottom: var(--s-2); }
-  .cs-link { margin-top: var(--s-5); }
+  .cs-note { margin-top: var(--s-4); }
+  .cs-cta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--s-4) var(--s-6);
+    margin-top: var(--s-6);
+    padding: var(--s-5) var(--s-6);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: var(--paper-deep);
+  }
+  .cs-cta-line {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: var(--step-1);
+  }
+  .cs-cta-actions { display: flex; flex-wrap: wrap; gap: var(--s-3); }
   @media (max-width: 719px) {
     .cs-head { align-items: flex-start; flex-direction: column; gap: var(--s-2); }
     .cs-availability { white-space: normal; }

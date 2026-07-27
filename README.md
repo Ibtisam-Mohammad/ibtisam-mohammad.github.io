@@ -27,7 +27,24 @@ A scroll-driven, turtle-graphics portfolio for an AI/ML engineer with a physics 
 - Textures ≤ 56 KB each (≤ 60); noise→structure sequence 206 KB total, lazy
 - Cross-browser: verified in headless Chromium (desktop + mobile emulation). **Firefox, Safari, iOS Safari, and Android Chrome on real hardware remain an owner task** (§16) — the animation stack is standards-only (rAF, dasharray, IntersectionObserver), so no known risks.
 
-## Deploy
+## Deploy — read this before the first push
+
+The site is hard-wired to the GitHub **user page** origin (`https://ibtisam-mohammad.github.io`),
+which currently serves the old Quartz "Small Diary". The two cannot share one origin.
+This repo has no git remote yet, so nothing is live — but the first push decides everything:
+
+1. **Push this repo as `Ibtisam-Mohammad/ibtisam-mohammad.github.io`** (the user-page repo,
+   replacing the Quartz site — the portfolio absorbs the diary: all notes now live at
+   `/notes/…` here, and `public/fara-7b/index.html` redirect-stubs the old diary URL).
+   Any other repo name serves the site at a subpath where every root-absolute URL breaks.
+2. In that repo's **Settings → Pages**, set **Source: GitHub Actions** (the workflow in
+   `.github/workflows/deploy.yml` handles build + deploy on pushes to `main`).
+3. If you ever move to a custom domain instead: set it in `astro.config.mjs` (`site`),
+   `public/robots.txt`, add a `public/CNAME` file, and rerun `python scripts/make-og.py`.
+4. `public/_headers` is Netlify-format and ignored by GitHub Pages (harmless; useful if
+   the host ever changes).
+
+## Deploy (any static host)
 
 Any static host. `dist/` is the site. Netlify reads [public/_headers](public/_headers) for caching (translate for Vercel/Pages). The configured canonical host is `https://ibtisam-mohammad.github.io`; rerun `python scripts/make-og.py` after changing the public identity or social preview design.
 

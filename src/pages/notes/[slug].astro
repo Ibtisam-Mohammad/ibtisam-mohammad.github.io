@@ -26,12 +26,15 @@ const siteUrl = new URL('/', Astro.site).href;
 const noteUrl = new URL(`/notes/${note.slug}/`, Astro.site).href;
 const personId = `${siteUrl}#person`;
 const websiteId = `${siteUrl}#website`;
-const publishedLabel = new Intl.DateTimeFormat('en-GB', {
-  day: 'numeric',
-  month: 'long',
-  year: 'numeric',
-  timeZone: 'UTC',
-}).format(new Date(`${note.published}T00:00:00Z`));
+const dateLabel = (iso: string) =>
+  new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(`${iso}T00:00:00Z`));
+const publishedLabel = dateLabel(note.published);
+const modifiedLabel = note.modified && note.modified !== note.published ? dateLabel(note.modified) : null;
 const structuredData = {
   '@context': 'https://schema.org',
   '@graph': [
@@ -43,7 +46,7 @@ const structuredData = {
       headline: note.title,
       description: note.dek,
       datePublished: note.published,
-      dateModified: note.published,
+      dateModified: note.modified ?? note.published,
       articleSection: note.kind,
       keywords: note.tags.map((tag) => tag.t),
       inLanguage: 'en',
@@ -65,7 +68,8 @@ const structuredData = {
         url: siteUrl,
       },
       citation: note.sourceUrl,
-      isRelatedTo: related.map(({ note: item }) => new URL(`/notes/${item.slug}/`, Astro.site).href),
+      // related notes are ordinary HTML links below — schema.org has no
+      // Article-valid property for them, so they stay out of the graph
     },
     {
       '@type': 'BreadcrumbList',
@@ -101,6 +105,12 @@ const structuredData = {
               By <a href="/#hero" rel="author">Ibtisam Mohammad</a>
               <span aria-hidden="true"> · </span>
               <time datetime={note.published}>{publishedLabel}</time>
+              {modifiedLabel && (
+                <>
+                  <span aria-hidden="true"> · </span>
+                  <span>revised <time datetime={note.modified}>{modifiedLabel}</time></span>
+                </>
+              )}
             </p>
           </div>
           <div class="note-mark" aria-hidden="true"><TurtleMark size={58} /></div>
@@ -162,6 +172,21 @@ const structuredData = {
             </ul>
           </aside>
         )}
+
+        <!-- notes are the likeliest search entry points — never a conversion dead end -->
+        <aside class="note-hire" data-vine-exclude>
+          <p>
+            I build production computer-vision, generative-AI, and MLOps systems —
+            open to full-time roles and contract work.
+          </p>
+          <p class="mono note-hire-links">
+            <a href="mailto:ibtisam115@gmail.com">ibtisam115@gmail.com</a>
+            <span class="muted" aria-hidden="true"> · </span>
+            <a href="/resume.pdf" target="_blank" rel="noopener">résumé</a>
+            <span class="muted" aria-hidden="true"> · </span>
+            <a href="/#work">case studies</a>
+          </p>
+        </aside>
 
         <nav class="note-next" aria-label="Continue reading">
           <span class="mono muted">Next note</span>
@@ -226,6 +251,17 @@ const structuredData = {
   .related-notes a { font-family: var(--font-display); font-weight: 600; }
   .related-notes span { font-size: var(--step--1); text-align: right; }
 
+  .note-hire {
+    margin-top: var(--s-7);
+    padding: var(--s-5) var(--s-6);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius-lg);
+    background: var(--paper-deep);
+    max-width: 62ch;
+  }
+  .note-hire p:first-child { font-weight: 500; }
+  .note-hire-links { margin-top: var(--s-3); }
   .note-next { display: grid; gap: var(--s-2); margin-top: var(--s-8); padding-top: var(--s-6); border-top: 2px solid var(--accent); }
   .note-next a { font-family: var(--font-display); font-weight: 600; font-size: var(--step-2); max-width: 26ch; }
 
