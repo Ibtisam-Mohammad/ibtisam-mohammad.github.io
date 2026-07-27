@@ -44,16 +44,15 @@ const yAxisD = `M ${X0} 2 V 112 M ${X0 - 3} 40 H ${X0 + 3} M ${X0 - 3} 70 H ${X0
     </svg>
     <p class="lede thesis">AI engineer and physicist building systems that work beyond the notebook.</p>
     <p class="mono muted roles">Computer vision &middot; generative AI &middot; agents &middot; MLOps</p>
-    <!-- the strongest shipped outcomes, surfaced before anything else asks for scroll -->
-    <p class="hero-proof mono" aria-label="Selected production results">
-      <strong>~25&nbsp;s&nbsp;&rarr;&nbsp;&lt;1&nbsp;s</strong> API latency &middot;
-      <strong>&minus;95%</strong> errors under load &middot;
-      <strong>~1&nbsp;s</strong> production face swap &middot;
-      <strong>3&nbsp;yrs</strong> shipping AI systems
+    <!-- credibility as a habit, not a scoreboard: the numbers live in the case
+         studies where they have context; this line says the work is routine -->
+    <p class="hero-proof">
+      3.5+ years taking vision, diffusion, and LLM systems to production — and keeping
+      them fast under real load. The case studies below carry the numbers.
     </p>
     <p class="hero-avail mono">
       <span class="avail-dot" aria-hidden="true"></span>
-      Open to full-time roles &amp; contract work &middot; remote-friendly &middot; UTC+05:30
+      Open to full-time roles &amp; contract work &middot; remote, any timezone
     </p>
     <div class="oss-proof">
       <p class="oss-copy">
@@ -146,22 +145,21 @@ const yAxisD = `M ${X0} 2 V 112 M ${X0 - 3} 40 H ${X0 + 3} M ${X0 - 3} 70 H ${X0
   .hero-proof {
     margin-top: var(--s-4);
     color: var(--ink-soft);
-    max-width: 62ch;
-  }
-  .hero-proof strong {
-    color: var(--ink);
-    font-weight: 500;
+    font-size: 1.0625rem;
+    max-width: 52ch;
   }
   .hero-avail {
     display: inline-flex;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--s-2);
     margin-top: var(--s-3);
     color: var(--ink-soft);
   }
   .avail-dot {
+    flex-shrink: 0;
     width: 9px;
     height: 9px;
+    margin-top: 4px; /* optically centers on the first text line */
     border-radius: 50%;
     background: var(--leaf);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--leaf) 18%, transparent);
