@@ -1,0 +1,423 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Lensed accretion disk — cursor-reactive</title>
+<style>
+  :root { --paper: #FAF7F0; --ink: #1A1815; --ink-soft: #6B6459; --cobalt: #2B59C3; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink);
+         font: 13px/1.55 ui-monospace, SFMono-Regular, monospace; }
+  #stage { position: relative; width: 100%; height: 74vh; min-height: 460px; }
+  canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
+  .panel { padding: 14px 20px 20px; display: grid; gap: 10px; }
+  .row { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+  label { color: var(--ink-soft); }
+  input[type=range] { width: 200px; accent-color: var(--cobalt); }
+  #hud { color: var(--ink-soft); white-space: pre; }
+  .hint { color: var(--ink-soft); }
+</style>
+
+<div id="stage"><canvas id="c"></canvas></div>
+<div class="panel">
+  <p class="hint">Move the cursor into the field. It is a second mass — nearby light is deflected around it by the weak-field lensing law, and the disk heats where it passes.</p>
+  <div class="row">
+    <label>inclination <output id="incOut">78</output>°
+      <input id="inc" type="range" min="8" max="88" step="1" value="78"></label>
+    <label>cursor mass <output id="cmOut">1.0</output>×
+      <input id="cm" type="range" min="0" max="250" step="1" value="100"></label>
+    <label><input id="flow" type="checkbox" checked> orbital flow</label>
+  </div>
+  <div id="hud"></div>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Gravitationally lensed thin accretion disk (Schwarzschild), plus a cursor that
+// acts as a second gravitating mass. Everything is computed; nothing is a bitmap.
+//
+// 1. GEODESICS. With u = 1/r and M = 1 (geometric units), null rays obey
+//        u'' + u = 3 M u^2
+//    Traced backward from the observer, a ray landing at apparent position
+//    (alpha, beta) has b = |(alpha,beta)|, u(0) = 0, u'(0) = 1/b. Crucially
+//    u(phi) depends ONLY on b, so a few hundred ODE solves cover the whole field.
+//
+// 2. DISK CROSSINGS. Disk normal n = (0, sin i, cos i) puts the disk's long axis
+//    horizontal. With pos = r(phi)(sin phi cos psi, sin phi sin psi, cos phi),
+//    pos . n = 0 has a closed form:
+//        phi_k = atan2(-cos i, sin psi sin i) + k*pi
+//    k = 0 is the direct image; k >= 1 is light that passed over/under the hole
+//    and returned -- the arc that makes the silhouette a lemniscate, not a ring.
+//
+// 3. ISORADIAL CURVES. The screen sweep yields the inverse map (pixel -> disk
+//    point); accumulating it into an (r, azimuth) grid inverts it. Walking a row
+//    of that grid in azimuth traces one ring of the disk as a continuous curve on
+//    screen. Those curves are the silky streamlines -- v1 stippled dots instead,
+//    which is why it looked noisy rather than drawn.
+//
+// 4. BEAMING. Keplerian orbits give delta^4 bolometric boost, so the approaching
+//    side burns. The gold caustic is not art direction; it is where delta peaks.
+//
+// 5. CURSOR. A point lens of Einstein radius tE displaces images radially away
+//    from itself by the weak-field deflection  d -> d + tE^2 / d  (softened at
+//    the core). Applied to the streamline vertices, so the cursor genuinely lenses
+//    the field rather than nudging it with an ad-hoc force.
+// ---------------------------------------------------------------------------
+const M = 1, R_IN = 6, R_OUT = 58;
+const DPHI = 0.012, PHI_MAX = Math.PI * 3.2;
+const NB = 340, B_MIN = 1.2, B_MAX = 62, NPSI = 900;
+const NR = 74, NPH = 260;            // isoradial grid: rings (log-spaced) x samples
+const NFLOW = 2100, FLOW_LEN = 8;    // travelling comet streaks
+const NDOTS = 3400;                  // particulate layer
+const VIEW_R = 37;                   // half-extent of the frame, in M (outer disk crops)
+const JUMP = 7;                      // model-unit gap that breaks a polyline
+const SJUMP = 46;                    // post-lens screen-px gap that breaks a polyline
+const LOGSPAN = Math.log(R_OUT / R_IN);
+
+// Rings are log-spaced and the disk's own emission falls off with radius, so the
+// inner disk reads as dense bright ink and the outer flow thins out into paper --
+// the delicacy in the reference comes from that gradient, not from fewer lines.
+const BUCKETS = [
+  { rgb: '176,182,196', a: 0.14, w: 0.6  },
+  { rgb: '132,141,160', a: 0.18, w: 0.7  },
+  { rgb: '78,98,148',   a: 0.23, w: 0.85 },
+  { rgb: '186,139,60',  a: 0.34, w: 1.0  },
+  { rgb: '226,182,94',  a: 0.52, w: 1.2  },
+];
+const HOT = '232,196,120';
+
+const stage = document.getElementById('stage');
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+const cache = document.createElement('canvas');
+const cctx = cache.getContext('2d');
+
+let W = 0, H = 0, CX = 0, CY = 0, SCALE = 1, DPR = 1;
+
+// ---- geodesic profile -------------------------------------------------------
+const NSAMP = Math.ceil(PHI_MAX / DPHI) + 4;
+const rBuf = new Float64Array(NSAMP), duBuf = new Float64Array(NSAMP);
+function rk4Profile(b) {
+  let u = 0, du = 1 / b, n = 1;
+  const f = (x) => 3 * M * x * x - x;
+  rBuf[0] = Infinity; duBuf[0] = du;
+  for (let phi = 0; phi < PHI_MAX; phi += DPHI) {
+    const k1u = du,                    k1d = f(u);
+    const k2u = du + 0.5 * DPHI * k1d, k2d = f(u + 0.5 * DPHI * k1u);
+    const k3u = du + 0.5 * DPHI * k2d, k3d = f(u + 0.5 * DPHI * k2u);
+    const k4u = du + DPHI * k3d,       k4d = f(u + DPHI * k3u);
+    u  += DPHI * (k1u + 2 * k2u + 2 * k3u + k4u) / 6;
+    du += DPHI * (k1d + 2 * k2d + 2 * k3d + k4d) / 6;
+    if (u > 1 / (2 * M + 1e-4) || u < 0) break;      // through the horizon
+    rBuf[n] = 1 / u; duBuf[n] = du; n++;
+    if (n >= NSAMP - 1) break;
+  }
+  return n;
+}
+
+// ---- forward map + curve extraction ----------------------------------------
+const CELLS = NR * NPH;
+const gu = [new Float32Array(CELLS), new Float32Array(CELLS)];   // apparent radius, in M
+const gv = [new Float32Array(CELLS), new Float32Array(CELLS)];   // apparent angle
+const gb = [new Float32Array(CELLS), new Float32Array(CELLS)];   // beaming brightness
+
+let curves = [];   // { ux, uy (model units), br, runs: [bucket, i0, i1], omega }
+
+function buildMap(incDeg) {
+  const i = incDeg * Math.PI / 180, ci = Math.cos(i), si = Math.sin(i);
+  const e2y = ci, e2z = -si;
+  gb[0].fill(0); gb[1].fill(0);
+
+  for (let bi = 0; bi < NB; bi++) {
+    const b = B_MIN + (B_MAX - B_MIN) * (bi / (NB - 1));
+    const lim = (rk4Profile(b) - 2) * DPHI;
+    if (lim <= 0) continue;
+    for (let pi = 0; pi < NPSI; pi++) {
+      const psi = (pi / NPSI) * Math.PI * 2;
+      const cps = Math.cos(psi), sps = Math.sin(psi);
+      let phi0 = Math.atan2(-ci, sps * si);
+      if (phi0 <= 1e-6) phi0 += Math.PI;
+      for (let k = 0; k < 3; k++) {
+        const phi = phi0 + k * Math.PI;
+        if (phi >= lim) break;
+        const fi = phi / DPHI, i0 = fi | 0, fr = fi - i0;
+        const r = rBuf[i0] + (rBuf[i0 + 1] - rBuf[i0]) * fr;
+        if (!(r >= R_IN && r <= R_OUT)) continue;
+        const du = duBuf[i0] + (duBuf[i0 + 1] - duBuf[i0]) * fr;
+        const sp = Math.sin(phi), cp = Math.cos(phi);
+        const dr = -du * r * r;
+        let kx = -(dr * sp * cps + r * cp * cps);
+        let ky = -(dr * sp * sps + r * cp * sps);
+        let kz = -(dr * cp - r * sp);
+        const kn = Math.hypot(kx, ky, kz) || 1; kx /= kn; ky /= kn; kz /= kn;
+        const pd = Math.atan2(r * (sp * sps * e2y + cp * e2z), r * sp * cps);
+        const beta = Math.sqrt(M / r), g = 1 / Math.sqrt(1 - beta * beta);
+        const spd = Math.sin(pd), cpd = Math.cos(pd);
+        const dop = 1 / (g * (1 - (beta * -spd * kx + beta * cpd * e2y * ky + beta * cpd * e2z * kz)));
+        // delta^4 beaming, gravitational redshift, and the disk's radial emission
+        // falloff -- the last is what keeps gold at the inner rim instead of
+        // flooding the whole approaching half
+        const bright = Math.min(9,
+          dop * dop * dop * dop
+          * Math.sqrt(Math.max(0, 1 - 2 * M / r))
+          * Math.pow(R_IN / r, 1.15));
+        const ri = Math.min(NR - 1, (Math.log(r / R_IN) / LOGSPAN * NR) | 0);
+        let ph = pd; if (ph < 0) ph += Math.PI * 2;
+        const cell = ri * NPH + Math.min(NPH - 1, (ph / (Math.PI * 2) * NPH) | 0);
+        const s = k === 0 ? 0 : 1;
+        if (gb[s][cell] === 0) { gu[s][cell] = b; gv[s][cell] = psi; gb[s][cell] = bright; }
+      }
+    }
+  }
+
+  // trace each grid row into a continuous curve, in model units (resolution-free)
+  curves = [];
+  for (let s = 0; s < 2; s++) {
+    for (let ri = 0; ri < NR; ri++) {
+      const r = R_IN * Math.exp(LOGSPAN * (ri + 0.5) / NR);
+      const ux = [], uy = [], br = [];
+      for (let p = 0; p < NPH; p++) {
+        const cell = ri * NPH + p;
+        const bb = gb[s][cell];
+        if (bb === 0) { ux.push(NaN); uy.push(NaN); br.push(0); continue; }
+        ux.push(gu[s][cell] * Math.cos(gv[s][cell]));
+        uy.push(-gu[s][cell] * Math.sin(gv[s][cell]));
+        br.push(bb);
+      }
+      if (br.filter((v) => v > 0).length < 12) continue;
+      // group consecutive samples of the same brightness bucket into one run, so a
+      // whole colour band strokes as a single sub-path instead of per-segment calls
+      const bkt = br.map((v) => v === 0 ? -1
+        : v < 0.13 ? 0 : v < 0.34 ? 1 : v < 0.70 ? 2 : v < 1.35 ? 3 : 4);
+      const runs = [];
+      let start = -1;
+      for (let p = 0; p <= NPH; p++) {
+        const cur = p < NPH ? bkt[p] : -2;
+        const prev = start >= 0 ? bkt[start] : -2;
+        if (start >= 0 && (cur !== prev || p === NPH)) {
+          if (p - start >= 2) runs.push([prev, start, p - 1]);
+          start = cur >= 0 ? p : -1;
+        } else if (start < 0 && cur >= 0) start = p;
+      }
+      curves.push({
+        ux: Float32Array.from(ux), uy: Float32Array.from(uy),
+        br: Float32Array.from(br), runs,
+        omega: 1.25 * Math.pow(r, -1.5), n: NPH, slot: s,
+      });
+    }
+  }
+  // flow streaks and loose grains ride the curves
+  flow.length = 0; dots.length = 0;
+  let sd = 4242;
+  const rnd = () => ((sd = (sd * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+  for (let k = 0; k < NFLOW; k++) {
+    const c = (rnd() * curves.length) | 0;
+    if (curves[c]) flow.push({ c, ph: rnd() });
+  }
+  for (let k = 0; k < NDOTS; k++) {
+    const c = (rnd() * curves.length) | 0;
+    if (curves[c]) dots.push({ c, ph: rnd(), jx: (rnd() - 0.5) * 2.4, jy: (rnd() - 0.5) * 2.4 });
+  }
+}
+const flow = [], dots = [];
+
+// ---- cursor lens ------------------------------------------------------------
+// image displacement for a point lens: d -> d + tE^2 / d, softened at the core
+let mx = -1e5, my = -1e5, tx = -1e5, ty = -1e5, influence = 0, cursorMass = 1;
+const CORE = 26;
+function lensPoint(x, y) {
+  if (influence < 0.002) return [x, y];
+  const dx = x - mx, dy = y - my;
+  const d2 = dx * dx + dy * dy;
+  const d = Math.sqrt(d2) || 1e-6;
+  const tE2 = 2400 * cursorMass * influence * DPR;
+  const push = tE2 / (d + CORE);
+  const s = 1 + push / d;
+  return [mx + dx * s, my + dy * s];
+}
+
+// ---- render -----------------------------------------------------------------
+function toScreen(ux, uy) { return [CX + ux * SCALE, CY + uy * SCALE]; }
+
+function drawField(g, t, animate) {
+  const paths = BUCKETS.map(() => new Path2D());
+  const hotPath = new Path2D();
+  const hotR = 150 * Math.sqrt(cursorMass);
+
+  for (const c of curves) {
+    for (const [bkt, i0, i1] of c.runs) {
+      const p = paths[bkt];
+      let started = false, pux = 0, puy = 0, psx = 0, psy = 0, prx = 0, pry = 0;
+      for (let k = i0; k <= i1; k++) {
+        const uxv = c.ux[k], uyv = c.uy[k];
+        if (Number.isNaN(uxv)) { started = false; continue; }
+        // A ring's apparent position jumps discontinuously where it crosses a
+        // lensing caustic. Without this guard the polyline draws a chord straight
+        // across the shadow -- the stray lines through the void.
+        if (started && Math.hypot(uxv - pux, uyv - puy) > JUMP) started = false;
+        pux = uxv; puy = uyv;
+        const [rx, ry] = toScreen(uxv, uyv);
+        const [x, y] = lensPoint(rx, ry);
+        // and again after lensing, as RELATIVE stretch: the cursor pushes points
+        // straddling its core apart, which would chord across the Einstein void.
+        // An absolute threshold cannot work here -- outer rings are legitimately
+        // far apart already -- so break when the lens stretches a segment.
+        if (started) {
+          const raw = Math.hypot(rx - prx, ry - pry);
+          const got = Math.hypot(x - psx, y - psy);
+          if (got > Math.max(SJUMP * DPR, raw * 3)) started = false;
+        }
+        prx = rx; pry = ry; psx = x; psy = y;
+        if (started) p.lineTo(x, y); else { p.moveTo(x, y); started = true; }
+        if (influence > 0.002) {
+          const dd = Math.hypot(x - mx, y - my);
+          if (dd < hotR) {
+            if (k === i0) hotPath.moveTo(x, y); else hotPath.lineTo(x, y);
+          }
+        }
+      }
+    }
+  }
+
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  // bloom under the hottest band
+  g.strokeStyle = `rgba(${BUCKETS[4].rgb},0.10)`;
+  g.lineWidth = 5 * DPR; g.stroke(paths[4]);
+  for (let i = 0; i < BUCKETS.length; i++) {
+    g.strokeStyle = `rgba(${BUCKETS[i].rgb},${BUCKETS[i].a})`;
+    g.lineWidth = BUCKETS[i].w * DPR;
+    g.stroke(paths[i]);
+  }
+  if (influence > 0.002) {
+    g.strokeStyle = `rgba(${HOT},${(0.30 * influence).toFixed(3)})`;
+    g.lineWidth = 1.4 * DPR; g.stroke(hotPath);
+  }
+
+  if (!animate) return;
+  // travelling streaks: brighter comets riding the same curves
+  const cool = new Path2D(), warm = new Path2D();
+  for (const f of flow) {
+    const c = curves[f.c]; if (!c) continue;
+    const base = (f.ph + t * c.omega) % 1;
+    let i0 = (base * c.n) | 0;
+    let started = false, hot = false, pux = 0, puy = 0, psx = 0, psy = 0, prx = 0, pry = 0;
+    for (let q = 0; q < FLOW_LEN; q++) {
+      const k = (i0 + q) % c.n;
+      const uxv = c.ux[k], uyv = c.uy[k];
+      if (Number.isNaN(uxv)) { started = false; continue; }
+      if (started && Math.hypot(uxv - pux, uyv - puy) > JUMP) started = false;
+      pux = uxv; puy = uyv;
+      if (c.br[k] > 1.35) hot = true;
+      const [rx, ry] = toScreen(uxv, uyv);
+      const [x, y] = lensPoint(rx, ry);
+      if (started) {
+        const raw = Math.hypot(rx - prx, ry - pry);
+        if (Math.hypot(x - psx, y - psy) > Math.max(SJUMP * DPR, raw * 3)) started = false;
+      }
+      prx = rx; pry = ry; psx = x; psy = y;
+      const p = hot ? warm : cool;
+      if (started) p.lineTo(x, y); else { p.moveTo(x, y); started = true; }
+    }
+  }
+  g.strokeStyle = 'rgba(58,74,112,0.17)'; g.lineWidth = 1.0 * DPR; g.stroke(cool);
+  g.strokeStyle = `rgba(${HOT},0.32)`;    g.lineWidth = 1.4 * DPR; g.stroke(warm);
+
+  // particulate layer: loose grains riding the same flow, for the speckle texture
+  const dCool = new Path2D(), dWarm = new Path2D(), sz = Math.max(1, 1.1 * DPR);
+  for (const d of dots) {
+    const c = curves[d.c]; if (!c) continue;
+    const k = (((d.ph + t * c.omega * 0.9) % 1) * c.n) | 0;
+    const uxv = c.ux[k]; if (Number.isNaN(uxv)) continue;
+    let [x, y] = toScreen(uxv + d.jx, c.uy[k] + d.jy);
+    [x, y] = lensPoint(x, y);
+    (c.br[k] > 1.35 ? dWarm : dCool).rect(x, y, sz, sz);
+  }
+  g.fillStyle = 'rgba(52,66,102,0.34)'; g.fill(dCool);
+  g.fillStyle = `rgba(${HOT},0.5)`;     g.fill(dWarm);
+}
+
+// ---- sizing -----------------------------------------------------------------
+function resize() {
+  DPR = Math.min(2, devicePixelRatio || 1);
+  const r = stage.getBoundingClientRect();
+  W = Math.max(2, Math.round(r.width * DPR));
+  H = Math.max(2, Math.round(r.height * DPR));
+  cv.width = W; cv.height = H; cache.width = W; cache.height = H;
+  CX = W / 2; CY = H / 2;
+  SCALE = Math.min(W / (2 * VIEW_R * 1.55), H / (2 * VIEW_R));
+  cacheValid = false;
+}
+new ResizeObserver(resize).observe(stage);
+
+// ---- driver -----------------------------------------------------------------
+const incEl = document.getElementById('inc'), incOut = document.getElementById('incOut');
+const cmEl = document.getElementById('cm'), cmOut = document.getElementById('cmOut');
+const flowEl = document.getElementById('flow'), hud = document.getElementById('hud');
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+let inc = +incEl.value, t = 0, lastTs = 0, frames = 0, acc = 0, buildMs = 0;
+let cacheValid = false, cursorIn = false;
+
+const t0 = performance.now(); resize(); buildMap(inc); buildMs = performance.now() - t0;
+
+cv.addEventListener('pointermove', (e) => {
+  const r = cv.getBoundingClientRect();
+  tx = (e.clientX - r.left) * DPR; ty = (e.clientY - r.top) * DPR;
+  cursorIn = true;
+});
+cv.addEventListener('pointerleave', () => { cursorIn = false; });
+incEl.addEventListener('input', () => {
+  inc = +incEl.value; incOut.textContent = inc;
+  const b0 = performance.now(); buildMap(inc); buildMs = performance.now() - b0;
+  cacheValid = false;
+});
+cmEl.addEventListener('input', () => {
+  cursorMass = +cmEl.value / 100;
+  cmOut.textContent = cursorMass.toFixed(1);
+  cacheValid = false;
+});
+
+function frame(ts) {
+  const dt = lastTs ? Math.min((ts - lastTs) / 1000, 0.05) : 1 / 60;
+  lastTs = ts;
+  const f0 = performance.now();
+
+  // ease the cursor so the lens glides instead of snapping
+  const targetInf = cursorIn ? 1 : 0;
+  influence += (targetInf - influence) * Math.min(1, dt * 7);
+  if (mx < -1e4) { mx = tx; my = ty; }
+  mx += (tx - mx) * Math.min(1, dt * 12);
+  my += (ty - my) * Math.min(1, dt * 12);
+
+  const animate = flowEl.checked && !reduced;
+  if (animate) t += dt;
+
+  const lensActive = influence > 0.002;
+  ctx.fillStyle = '#FAF7F0';
+  ctx.fillRect(0, 0, W, H);
+
+  if (!lensActive && !animate) {
+    // fully static: draw the base once and blit it thereafter
+    if (!cacheValid) {
+      cctx.clearRect(0, 0, W, H);
+      drawField(cctx, 0, false);
+      cacheValid = true;
+    }
+    ctx.drawImage(cache, 0, 0);
+  } else {
+    drawField(ctx, t, animate);
+  }
+
+  acc += performance.now() - f0; frames++;
+  if (frames >= 30) {
+    let pts = 0; for (const c of curves) for (const [, a, b] of c.runs) pts += b - a + 1;
+    hud.textContent =
+      `curves         ${curves.length}  (${pts.toLocaleString()} base vertices + ${(flow.length * FLOW_LEN).toLocaleString()} streak vertices)\n` +
+      `frame          ${(acc / frames).toFixed(2)} ms   (budget 16.7)   lens ${lensActive ? 'ACTIVE' : 'idle'}\n` +
+      `lens rebuild   ${buildMs.toFixed(1)} ms  (inclination change only)\n` +
+      `canvas         ${W}x${H} @ DPR ${DPR}${reduced ? '   reduced-motion: static' : ''}`;
+    acc = 0; frames = 0;
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+window.__ready = true;
+</script>

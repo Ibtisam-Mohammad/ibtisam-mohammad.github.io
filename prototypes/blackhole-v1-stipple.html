@@ -1,0 +1,243 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Lensed accretion disk — prototype</title>
+<style>
+  :root { --paper: #FAF7F0; --ink: #1A1815; --ink-soft: #6B6459; --cobalt: #2B59C3; }
+  body { margin: 0; background: var(--paper); color: var(--ink);
+         font: 14px/1.5 ui-monospace, monospace; display: grid; gap: 12px;
+         padding: 18px; justify-items: start; }
+  canvas { display: block; width: 860px; height: 620px; }
+  .row { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+  #hud { color: var(--ink-soft); white-space: pre; }
+  label { color: var(--ink-soft); }
+  input[type=range] { width: 240px; accent-color: var(--cobalt); }
+</style>
+
+<canvas id="c"></canvas>
+<div class="row">
+  <label>inclination <output id="incOut">72</output>°
+    <input id="inc" type="range" min="5" max="88" step="1" value="72"></label>
+  <label><input id="sweep" type="checkbox"> sweep inclination (rebuild every frame)</label>
+  <label><input id="flow" type="checkbox" checked> orbital flow</label>
+</div>
+<div id="hud"></div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Gravitationally lensed thin accretion disk, Schwarzschild. All computed.
+//
+// Null geodesics obey, with u = 1/r and M = 1 (geometric units):
+//     u'' + u = 3 M u^2
+// Traced BACKWARD from the observer, a ray arriving at apparent position
+// (alpha, beta) has b = |(alpha,beta)|, u(0) = 0, u'(0) = 1/b. The economy that
+// makes this cheap: u(phi) depends ONLY on b, never on the sky angle psi. So we
+// integrate a few hundred ODEs and reuse each profile across every psi.
+//
+// Disk normal n = (0, sin i, cos i), so the disk's long axis projects
+// horizontally. A ray meets the disk plane where pos . n = 0 with
+// pos = r(phi) * (sin phi cos psi, sin phi sin psi, cos phi) -- a CLOSED FORM:
+//     cos(phi) cos(i) + sin(phi) sin(psi) sin(i) = 0
+//     phi_k = atan2(-cos i, sin psi sin i) + k*pi
+// k = 0 is the direct image; k >= 1 is light that passed over or under the hole
+// and reappears -- the arc that makes the shape read as a lemniscate, not a ring.
+//
+// The screen sweep gives the INVERSE map (pixel -> disk point). To make material
+// orbit, we need the FORWARD map, so the sweep is accumulated into a
+// (radius, azimuth) grid holding the apparent position of each disk element in
+// BOTH its direct and its lensed image. Particles then orbit in (r, phi) at the
+// Keplerian rate and are looked up each frame -- so one lump of gas draws a
+// streak on the disk AND a second streak arcing over the hole, which is what
+// actually produces the reference image's structure.
+// ---------------------------------------------------------------------------
+const M = 1, R_IN = 6, R_OUT = 30;
+const DPHI = 0.012, PHI_MAX = Math.PI * 3.2;
+const NB = 300, B_MIN = 1.2, B_MAX = 34, NPSI = 760;
+const NR = 88, NPH = 560;                 // forward-map grid resolution
+const NPART = 9000, TRAIL = 4, TAU = 0.5; // streak length in orbital phase
+
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d', { alpha: false });
+const DPR = Math.min(2, devicePixelRatio || 1);
+const W = Math.round(860 * DPR), H = Math.round(620 * DPR);
+cv.width = W; cv.height = H;
+const CX = W / 2, CY = H / 2, SCALE = (H / 2) / 30;
+
+// forward map: [slot][cell] -> screen x, y, brightness. slot 0 direct, 1 lensed.
+const CELLS = NR * NPH;
+const gx = [new Float32Array(CELLS), new Float32Array(CELLS)];
+const gy = [new Float32Array(CELLS), new Float32Array(CELLS)];
+const gb = [new Float32Array(CELLS), new Float32Array(CELLS)];
+
+const NSAMP = Math.ceil(PHI_MAX / DPHI) + 4;
+const rBuf = new Float64Array(NSAMP), duBuf = new Float64Array(NSAMP);
+
+function rk4Profile(b) {
+  let u = 0, du = 1 / b, n = 1;
+  const f = (x) => 3 * M * x * x - x;
+  rBuf[0] = Infinity; duBuf[0] = du;
+  for (let phi = 0; phi < PHI_MAX; phi += DPHI) {
+    const k1u = du,                    k1d = f(u);
+    const k2u = du + 0.5 * DPHI * k1d, k2d = f(u + 0.5 * DPHI * k1u);
+    const k3u = du + 0.5 * DPHI * k2d, k3d = f(u + 0.5 * DPHI * k2u);
+    const k4u = du + DPHI * k3d,       k4d = f(u + DPHI * k3u);
+    u  += DPHI * (k1u + 2 * k2u + 2 * k3u + k4u) / 6;
+    du += DPHI * (k1d + 2 * k2d + 2 * k3d + k4d) / 6;
+    if (u > 1 / (2 * M + 1e-4) || u < 0) break;   // crossed the horizon
+    rBuf[n] = 1 / u; duBuf[n] = du; n++;
+    if (n >= NSAMP - 1) break;
+  }
+  return n;
+}
+
+function build(incDeg) {
+  const i = incDeg * Math.PI / 180, ci = Math.cos(i), si = Math.sin(i);
+  const e2y = ci, e2z = -si;              // disk basis: e1 = x, e2 = (0, ci, -si)
+  for (let s = 0; s < 2; s++) gb[s].fill(0);
+
+  for (let bi = 0; bi < NB; bi++) {
+    const b = B_MIN + (B_MAX - B_MIN) * (bi / (NB - 1));
+    const phiLimit = (rk4Profile(b) - 2) * DPHI;
+    if (phiLimit <= 0) continue;
+    const sxb = b * SCALE;
+
+    for (let pi = 0; pi < NPSI; pi++) {
+      const psi = (pi / NPSI) * Math.PI * 2;
+      const cps = Math.cos(psi), sps = Math.sin(psi);
+      let phi0 = Math.atan2(-ci, sps * si);
+      if (phi0 <= 1e-6) phi0 += Math.PI;
+
+      for (let k = 0; k < 3; k++) {
+        const phi = phi0 + k * Math.PI;
+        if (phi >= phiLimit) break;
+        const fi = phi / DPHI, i0 = fi | 0, fr = fi - i0;
+        const r = rBuf[i0] + (rBuf[i0 + 1] - rBuf[i0]) * fr;
+        if (!(r >= R_IN && r <= R_OUT)) continue;
+        const du = duBuf[i0] + (duBuf[i0 + 1] - duBuf[i0]) * fr;
+
+        const sp = Math.sin(phi), cp = Math.cos(phi);
+        // photon direction back toward the observer (phi grows inward, so negate)
+        const dr = -du * r * r;
+        let kx = -(dr * sp * cps + r * cp * cps);
+        let ky = -(dr * sp * sps + r * cp * sps);
+        let kz = -(dr * cp - r * sp);
+        const kn = Math.hypot(kx, ky, kz) || 1;
+        kx /= kn; ky /= kn; kz /= kn;
+
+        // disk azimuth of the emitting element
+        const pd = Math.atan2(r * (sp * sps * e2y + cp * e2z), r * sp * cps);
+
+        // Keplerian motion + relativistic beaming: delta^4 is the bolometric
+        // boost, and it is the whole reason one side of the disk burns.
+        const beta = Math.sqrt(M / r), g = 1 / Math.sqrt(1 - beta * beta);
+        const spd = Math.sin(pd), cpd = Math.cos(pd);
+        const dop = 1 / (g * (1 - (beta * -spd * kx + beta * cpd * e2y * ky + beta * cpd * e2z * kz)));
+        const grav = Math.sqrt(Math.max(0, 1 - 2 * M / r));
+        const bright = Math.min(7, dop * dop * dop * dop * grav);
+
+        const ri = ((r - R_IN) / (R_OUT - R_IN) * NR) | 0;
+        let ph = pd; if (ph < 0) ph += Math.PI * 2;
+        const phi_i = (ph / (Math.PI * 2) * NPH) | 0;
+        const cell = (ri < NR ? ri : NR - 1) * NPH + (phi_i < NPH ? phi_i : NPH - 1);
+        const s = k === 0 ? 0 : 1;
+        if (gb[s][cell] === 0) {           // first writer wins: nearest sample
+          gx[s][cell] = CX + sxb * cps;
+          gy[s][cell] = CY - sxb * sps;
+          gb[s][cell] = bright;
+        }
+      }
+    }
+  }
+}
+
+// particles: r fixed, azimuth advances at the Keplerian rate
+const pr = new Float32Array(NPART), pph = new Float32Array(NPART), pw = new Float32Array(NPART);
+(function seedParticles() {
+  let s = 987654321;
+  const rnd = () => ((s = (s * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+  for (let n = 0; n < NPART; n++) {
+    const r = R_IN + (R_OUT - R_IN) * Math.pow(rnd(), 1.7);   // weight the hot inner disk
+    pr[n] = r;
+    pph[n] = rnd() * Math.PI * 2;
+    pw[n] = 1.35 * Math.pow(r, -1.5);                          // omega ~ r^-3/2
+  }
+})();
+
+// Ink on paper, not light on black: the reference is dark streamlines on cream, so
+// brightness maps to ink DENSITY and the shadow is bare paper -- which is also what
+// a pen plotter would actually put down.
+const img = ctx.createImageData(W, H);
+const buf32 = new Uint32Array(img.data.buffer);
+const template = new Uint32Array(W * H);
+template.fill((255 << 24) | (0xF0 << 16) | (0xF7 << 8) | 0xFA);
+const COOL = [0x2B, 0x59, 0xC3], HOT = [0xE0, 0x73, 0x1D];
+
+function render(t) {
+  buf32.set(template);
+  const d = img.data;
+  for (let n = 0; n < NPART; n++) {
+    const r = pr[n], w = pw[n];
+    const ri = ((r - R_IN) / (R_OUT - R_IN) * NR) | 0;
+    const rowBase = (ri < NR ? ri : NR - 1) * NPH;
+    for (let s = 0; s < 2; s++) {
+      for (let q = 0; q < TRAIL; q++) {
+        let ph = pph[n] + w * (t - q * TAU);
+        ph %= Math.PI * 2; if (ph < 0) ph += Math.PI * 2;
+        const cell = rowBase + ((ph / (Math.PI * 2) * NPH) | 0);
+        const br = gb[s][cell];
+        if (br === 0) continue;
+        let a = br * (1 - q / TRAIL) * (s ? 0.44 : 0.68) * 0.42;
+        if (a <= 0.004) continue; if (a > 0.9) a = 0.9;
+        const mix = br > 2.6 ? 1 : br / 2.6;
+        const cr = COOL[0] + (HOT[0] - COOL[0]) * mix;
+        const cg = COOL[1] + (HOT[1] - COOL[1]) * mix;
+        const cb = COOL[2] + (HOT[2] - COOL[2]) * mix;
+        const x = gx[s][cell] | 0, y = gy[s][cell] | 0;
+        if (x < 1 || y < 1 || x >= W - 1 || y >= H - 1) continue;
+        let o = (y * W + x) << 2;
+        d[o] += (cr - d[o]) * a; d[o+1] += (cg - d[o+1]) * a; d[o+2] += (cb - d[o+2]) * a;
+        o += 4;
+        d[o] += (cr - d[o]) * a; d[o+1] += (cg - d[o+1]) * a; d[o+2] += (cb - d[o+2]) * a;
+      }
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+// ---- driver -----------------------------------------------------------------
+const incEl = document.getElementById('inc'), incOut = document.getElementById('incOut');
+const sweepEl = document.getElementById('sweep'), flowEl = document.getElementById('flow');
+const hud = document.getElementById('hud');
+let inc = +incEl.value, t = 0, frames = 0, acc = 0, rebuildMs = 0, lastTs = 0;
+const t0 = performance.now(); build(inc); const firstBuild = performance.now() - t0;
+rebuildMs = firstBuild;
+
+function frame(ts) {
+  const dt = lastTs ? Math.min((ts - lastTs) / 1000, 0.05) : 1 / 60;
+  lastTs = ts;
+  const f0 = performance.now();
+  if (sweepEl.checked) {
+    inc = 47 + 40 * Math.sin(ts / 3000);
+    incEl.value = Math.round(inc);
+    const b0 = performance.now(); build(inc); rebuildMs = performance.now() - b0;
+  }
+  incOut.textContent = Math.round(inc);
+  if (flowEl.checked) t += dt * 6;
+  render(t);
+  acc += performance.now() - f0; frames++;
+  if (frames % 30 === 0) {
+    hud.textContent =
+      `particles      ${NPART.toLocaleString()} x ${TRAIL} trail x 2 images = ${(NPART*TRAIL*2).toLocaleString()} samples/frame\n` +
+      `frame          ${(acc / frames).toFixed(2)} ms  (budget 16.7)\n` +
+      `lens rebuild   ${rebuildMs.toFixed(1)} ms   (first build ${firstBuild.toFixed(1)} ms)\n` +
+      `canvas         ${W}x${H} @ DPR ${DPR}`;
+    acc = 0; frames = 0;
+  }
+  requestAnimationFrame(frame);
+}
+incEl.addEventListener('input', () => {
+  inc = +incEl.value;
+  const b0 = performance.now(); build(inc); rebuildMs = performance.now() - b0;
+});
+requestAnimationFrame(frame);
+window.__ready = true;
+</script>
