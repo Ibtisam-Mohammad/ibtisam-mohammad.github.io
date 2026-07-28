@@ -84,6 +84,19 @@ const BUCKETS = [
 ];
 const HOT = '232,196,120';
 
+// The shadow of a Schwarzschild hole is a circle of apparent radius 3*sqrt(3) M,
+// the critical impact parameter -- and it is a circle at EVERY inclination; only
+// the disk around it changes shape. On cream paper an unfilled void reads as light,
+// so the shadow has to be actual ink or the thing never feels black.
+const B_CRIT = 3 * Math.SQRT2 * Math.SQRT2 * Math.sqrt(3) / 2;   // = 3*sqrt(3)
+const SHADOW = '20,18,15';
+// Rays with b just above b_crit loop the hole many times before escaping, which is
+// why a thin, very bright photon ring sits right on the shadow's edge.
+const RING_SCALE = 1.018;
+
+const INFALL_T = 0.75;   // seconds for a captured grain to reach the cursor
+const WIND = 3.6;        // radians of spiral on the way in
+
 const stage = document.getElementById('stage');
 const cv = document.getElementById('c');
 const ctx = cv.getContext('2d');
@@ -214,21 +227,21 @@ function buildMap(incDeg) {
   }
   for (let k = 0; k < NDOTS; k++) {
     const c = (rnd() * curves.length) | 0;
-    if (curves[c]) dots.push({ c, ph: rnd(), jx: (rnd() - 0.5) * 2.4, jy: (rnd() - 0.5) * 2.4 });
+    if (curves[c]) dots.push({ c, ph: rnd(), jx: (rnd() - 0.5) * 2.4, jy: (rnd() - 0.5) * 2.4, cap: 0, ox: 0, oy: 0 });
   }
 }
 const flow = [], dots = [];
+let lastFalling = 0;
 
 // ---- cursor lens ------------------------------------------------------------
 // image displacement for a point lens: d -> d + tE^2 / d, softened at the core
 let mx = -1e5, my = -1e5, tx = -1e5, ty = -1e5, influence = 0, cursorMass = 1;
 const CORE = 26;
-function lensPoint(x, y) {
+function lensPoint(x, y, scale) {
   if (influence < 0.002) return [x, y];
   const dx = x - mx, dy = y - my;
-  const d2 = dx * dx + dy * dy;
-  const d = Math.sqrt(d2) || 1e-6;
-  const tE2 = 2400 * cursorMass * influence * DPR;
+  const d = Math.hypot(dx, dy) || 1e-6;
+  const tE2 = 2400 * cursorMass * influence * DPR * (scale === undefined ? 1 : scale);
   const push = tE2 / (d + CORE);
   const s = 1 + push / d;
   return [mx + dx * s, my + dy * s];
@@ -237,10 +250,29 @@ function lensPoint(x, y) {
 // ---- render -----------------------------------------------------------------
 function toScreen(ux, uy) { return [CX + ux * SCALE, CY + uy * SCALE]; }
 
-function drawField(g, t, animate) {
+// a circle in model units, lensed by the cursor -- so the shadow and photon ring
+// distort correctly when the second mass passes in front of them
+// The shadow is a filled region, not a stroke, so it cannot take the full lens: at
+// close range the displacement folds the outline back through itself and the nonzero
+// winding rule renders the overlap as stripes. A damped push keeps the distortion
+// legible and the polygon simple.
+const SHADOW_LENS = 0.3;
+function lensedCircle(rModel, steps) {
+  const p = new Path2D();
+  for (let i = 0; i <= steps; i++) {
+    const a = (i / steps) * Math.PI * 2;
+    const [rx, ry] = toScreen(rModel * Math.cos(a), rModel * Math.sin(a));
+    const [x, y] = lensPoint(rx, ry, SHADOW_LENS);
+    if (i === 0) p.moveTo(x, y); else p.lineTo(x, y);
+  }
+  p.closePath();
+  return p;
+}
+
+function drawField(g, t, animate, dt) {
   const paths = BUCKETS.map(() => new Path2D());
   const hotPath = new Path2D();
-  const hotR = 150 * Math.sqrt(cursorMass);
+  const hotR = 66 * Math.sqrt(cursorMass) * DPR;
 
   for (const c of curves) {
     for (const [bkt, i0, i1] of c.runs) {
@@ -278,6 +310,17 @@ function drawField(g, t, animate) {
   }
 
   g.lineCap = 'round'; g.lineJoin = 'round';
+
+  // Shadow FIRST, so the disk's near side strokes over it: rays with b < b_crit
+  // that clip the disk before plunging do carry light, and drawing the streamlines
+  // on top is what keeps this from looking like a flat pasted disc.
+  const shadow = lensedCircle(B_CRIT, 96);
+  g.fillStyle = `rgba(${SHADOW},0.94)`;
+  g.fill(shadow);
+  const ring = lensedCircle(B_CRIT * RING_SCALE, 96);
+  g.strokeStyle = `rgba(${HOT},0.13)`; g.lineWidth = 7 * DPR; g.stroke(ring);
+  g.strokeStyle = `rgba(${HOT},0.55)`; g.lineWidth = 1.6 * DPR; g.stroke(ring);
+
   // bloom under the hottest band
   g.strokeStyle = `rgba(${BUCKETS[4].rgb},0.10)`;
   g.lineWidth = 5 * DPR; g.stroke(paths[4]);
@@ -287,8 +330,8 @@ function drawField(g, t, animate) {
     g.stroke(paths[i]);
   }
   if (influence > 0.002) {
-    g.strokeStyle = `rgba(${HOT},${(0.30 * influence).toFixed(3)})`;
-    g.lineWidth = 1.4 * DPR; g.stroke(hotPath);
+    g.strokeStyle = `rgba(${HOT},${(0.17 * influence).toFixed(3)})`;
+    g.lineWidth = 1.3 * DPR; g.stroke(hotPath);
   }
 
   if (!animate) return;
@@ -320,18 +363,69 @@ function drawField(g, t, animate) {
   g.strokeStyle = 'rgba(58,74,112,0.17)'; g.lineWidth = 1.0 * DPR; g.stroke(cool);
   g.strokeStyle = `rgba(${HOT},0.32)`;    g.lineWidth = 1.4 * DPR; g.stroke(warm);
 
-  // particulate layer: loose grains riding the same flow, for the speckle texture
+  // Particulate layer, and the cursor's own accretion. A grain that drifts inside
+  // the second mass's capture radius is stripped off its ring and spirals in,
+  // brightening as it falls -- infall compresses and heats. It respawns on its
+  // original ring, so the disk never depletes.
   const dCool = new Path2D(), dWarm = new Path2D(), sz = Math.max(1, 1.1 * DPR);
+  const fall = new Path2D();
+  const tE = Math.sqrt(2400 * cursorMass * DPR);
+  const capR = tE * 2.1;
+  let falling = 0;
+
   for (const d of dots) {
     const c = curves[d.c]; if (!c) continue;
     const k = (((d.ph + t * c.omega * 0.9) % 1) * c.n) | 0;
     const uxv = c.ux[k]; if (Number.isNaN(uxv)) continue;
-    let [x, y] = toScreen(uxv + d.jx, c.uy[k] + d.jy);
-    [x, y] = lensPoint(x, y);
+    const [rx, ry] = toScreen(uxv + d.jx, c.uy[k] + d.jy);
+    const [x, y] = lensPoint(rx, ry);
+
+    if (d.cap > 0) {
+      falling++;
+      d.cap += dt / INFALL_T;
+      if (d.cap >= 1) { d.cap = 0; continue; }          // consumed; back on its ring
+      const ang0 = Math.atan2(d.oy - my, d.ox - mx);
+      const r0 = Math.hypot(d.ox - mx, d.oy - my);
+      let started = false;
+      for (let q = 0; q < 4; q++) {                      // short infall trail
+        const s = d.cap - q * 0.07;
+        if (s <= 0) break;
+        const rr = r0 * Math.pow(1 - s, 1.35);
+        const aa = ang0 + s * WIND;
+        const fx = mx + rr * Math.cos(aa), fy = my + rr * Math.sin(aa);
+        if (started) fall.lineTo(fx, fy); else { fall.moveTo(fx, fy); started = true; }
+      }
+      continue;
+    }
+    if (influence > 0.25 && Math.hypot(x - mx, y - my) < capR && Math.random() < 0.035) {
+      d.cap = 0.001; d.ox = x; d.oy = y;
+      continue;
+    }
     (c.br[k] > 1.35 ? dWarm : dCool).rect(x, y, sz, sz);
   }
   g.fillStyle = 'rgba(52,66,102,0.34)'; g.fill(dCool);
   g.fillStyle = `rgba(${HOT},0.5)`;     g.fill(dWarm);
+  if (falling) {
+    g.strokeStyle = `rgba(${HOT},${(0.55 * influence).toFixed(3)})`;
+    g.lineWidth = 1.3 * DPR; g.stroke(fall);
+  }
+  lastFalling = falling;
+
+  // the second mass itself: a small ink core, its Einstein radius, and the hot knot
+  // where captured matter lands
+  if (influence > 0.01) {
+    g.beginPath();
+    g.arc(mx, my, tE, 0, Math.PI * 2);
+    g.strokeStyle = `rgba(${HOT},${(0.16 * influence).toFixed(3)})`;
+    g.lineWidth = 1 * DPR; g.stroke();
+    const knot = Math.min(1, falling / 40);
+    g.beginPath();
+    g.arc(mx, my, (4.5 + 5 * knot) * DPR, 0, Math.PI * 2);
+    g.fillStyle = `rgba(${HOT},${(0.30 * knot * influence).toFixed(3)})`; g.fill();
+    g.beginPath();
+    g.arc(mx, my, 3.4 * DPR, 0, Math.PI * 2);
+    g.fillStyle = `rgba(${SHADOW},${(0.88 * influence).toFixed(3)})`; g.fill();
+  }
 }
 
 // ---- sizing -----------------------------------------------------------------
@@ -398,12 +492,12 @@ function frame(ts) {
     // fully static: draw the base once and blit it thereafter
     if (!cacheValid) {
       cctx.clearRect(0, 0, W, H);
-      drawField(cctx, 0, false);
+      drawField(cctx, 0, false, dt);
       cacheValid = true;
     }
     ctx.drawImage(cache, 0, 0);
   } else {
-    drawField(ctx, t, animate);
+    drawField(ctx, t, animate, dt);
   }
 
   acc += performance.now() - f0; frames++;
@@ -412,6 +506,7 @@ function frame(ts) {
     hud.textContent =
       `curves         ${curves.length}  (${pts.toLocaleString()} base vertices + ${(flow.length * FLOW_LEN).toLocaleString()} streak vertices)\n` +
       `frame          ${(acc / frames).toFixed(2)} ms   (budget 16.7)   lens ${lensActive ? 'ACTIVE' : 'idle'}\n` +
+      `accreting      ${lastFalling} grains falling into the cursor\n` +
       `lens rebuild   ${buildMs.toFixed(1)} ms  (inclination change only)\n` +
       `canvas         ${W}x${H} @ DPR ${DPR}${reduced ? '   reduced-motion: static' : ''}`;
     acc = 0; frames = 0;

@@ -37,13 +37,21 @@ const box = await page.evaluate(() => {
   const r = document.getElementById('c').getBoundingClientRect();
   return { x: r.x, y: r.y, w: r.width, h: r.height };
 });
-for (let i = 0; i < 26; i++) {
-  await page.mouse.move(box.x + box.w * (0.32 + i * 0.0012), box.y + box.h * 0.42);
-  await new Promise((r) => setTimeout(r, 40));
-}
-await new Promise((r) => setTimeout(r, 900));
+// drift slowly so grains have time to be captured; hold off to the side of the hole
+const drift = async (fx, fy, n) => {
+  for (let i = 0; i < n; i++) {
+    await page.mouse.move(box.x + box.w * (fx + i * 0.0006), box.y + box.h * fy);
+    await new Promise((r) => setTimeout(r, 45));
+  }
+};
+await drift(0.34, 0.47, 70);
 results.cursorLens = await hud();
 await shot('v2-cursor');
+
+// worst case for the shadow fill: cursor sitting right on top of it
+await drift(0.495, 0.455, 40);
+results.cursorOverShadow = await hud();
+await shot('v2-cursor-over-shadow');
 
 console.log(JSON.stringify({ errs, results }, null, 1));
 await browser.close();
