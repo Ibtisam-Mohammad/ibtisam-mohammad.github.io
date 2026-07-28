@@ -88,7 +88,7 @@ const HOT = '232,196,120';
 // the critical impact parameter -- and it is a circle at EVERY inclination; only
 // the disk around it changes shape. On cream paper an unfilled void reads as light,
 // so the shadow has to be actual ink or the thing never feels black.
-const B_CRIT = 3 * Math.SQRT2 * Math.SQRT2 * Math.sqrt(3) / 2;   // = 3*sqrt(3)
+const B_CRIT = 3 * Math.sqrt(3);
 const SHADOW = '20,18,15';
 // Rays with b just above b_crit loop the hole many times before escaping, which is
 // why a thin, very bright photon ring sits right on the shadow's edge.
@@ -96,6 +96,16 @@ const RING_SCALE = 1.018;
 
 const INFALL_T = 0.75;   // seconds for a captured grain to reach the cursor
 const WIND = 3.6;        // radians of spiral on the way in
+
+// Observed bolometric intensity spans several orders of magnitude across the disk,
+// so it is normalised to the frame maximum and passed through a display transfer
+// exponent. This is a TONE MAP, not a physical term -- the physics stays exact and
+// the compression is confined to one honest place.
+const DISPLAY_GAMMA = 0.35;
+// Bucket edges on the tone-mapped [0,1]. The top bucket carries a wide bloom pass, so
+// it has to stay a genuinely small population -- the hot crescent, not half the disk.
+const BAND = [0.16, 0.34, 0.54, 0.79];
+const HOT_AT = 0.79;
 
 const stage = document.getElementById('stage');
 const cv = document.getElementById('c');
@@ -130,14 +140,19 @@ function rk4Profile(b) {
 const CELLS = NR * NPH;
 const gu = [new Float32Array(CELLS), new Float32Array(CELLS)];   // apparent radius, in M
 const gv = [new Float32Array(CELLS), new Float32Array(CELLS)];   // apparent angle
-const gb = [new Float32Array(CELLS), new Float32Array(CELLS)];   // beaming brightness
+const gb = [new Float32Array(CELLS), new Float32Array(CELLS)];   // observed flux (raw)
+// separate occupancy mask: the flux itself vanishes at the inner edge, so a zero
+// value is a legitimate sample and cannot double as "this cell is empty"
+const go = [new Uint8Array(CELLS), new Uint8Array(CELLS)];
 
 let curves = [];   // { ux, uy (model units), br, runs: [bucket, i0, i1], omega }
+let gMax = 0;      // peak observed flux this build, for the tone map
 
 function buildMap(incDeg) {
   const i = incDeg * Math.PI / 180, ci = Math.cos(i), si = Math.sin(i);
   const e2y = ci, e2z = -si;
-  gb[0].fill(0); gb[1].fill(0);
+  go[0].fill(0); go[1].fill(0);
+  gMax = 0;
 
   for (let bi = 0; bi < NB; bi++) {
     const b = B_MIN + (B_MAX - B_MIN) * (bi / (NB - 1));
@@ -162,21 +177,39 @@ function buildMap(incDeg) {
         let kz = -(dr * cp - r * sp);
         const kn = Math.hypot(kx, ky, kz) || 1; kx /= kn; ky /= kn; kz /= kn;
         const pd = Math.atan2(r * (sp * sps * e2y + cp * e2z), r * sp * cps);
-        const beta = Math.sqrt(M / r), g = 1 / Math.sqrt(1 - beta * beta);
+        // Local orbital speed measured by a STATIC observer at r. The Schwarzschild
+        // coordinate angular velocity is the Newtonian Omega = sqrt(M/r^3), but the
+        // locally measured speed is r*Omega / sqrt(1-2M/r) = sqrt(M/(r-2M)).
+        // The Newtonian sqrt(M/r) understates it badly: 0.408c vs the correct 0.5c
+        // at the ISCO, which visibly weakens the beaming asymmetry.
+        const beta = Math.sqrt(M / (r - 2 * M)), g = 1 / Math.sqrt(1 - beta * beta);
         const spd = Math.sin(pd), cpd = Math.cos(pd);
         const dop = 1 / (g * (1 - (beta * -spd * kx + beta * cpd * e2y * ky + beta * cpd * e2z * kz)));
-        // delta^4 beaming, gravitational redshift, and the disk's radial emission
-        // falloff -- the last is what keeps gold at the inner rim instead of
-        // flooding the whole approaching half
-        const bright = Math.min(9,
-          dop * dop * dop * dop
-          * Math.sqrt(Math.max(0, 1 - 2 * M / r))
-          * Math.pow(R_IN / r, 1.15));
+        // Total redshift factor g = delta * sqrt(1-2M/r): special-relativistic
+        // beaming times gravitational redshift. I_nu/nu^3 is a Lorentz invariant, so
+        // the BOLOMETRIC intensity scales as g^4 -- and the gravitational part must
+        // therefore enter as (1-2M/r)^2, not as a lone square root.
+        const gfac = dop * Math.sqrt(Math.max(0, 1 - 2 * M / r));
+        const g4 = gfac * gfac * gfac * gfac;
+        // Shakura-Sunyaev / Page-Thorne thin-disk emissivity: F ~ r^-3 (1 - sqrt(Rin/r)).
+        // It vanishes at the inner edge, which is what puts a dark lip inside the
+        // hot rim. Previously this was an invented r^-1.15, which is far too flat.
+        const emis = Math.pow(r, -3) * (1 - Math.sqrt(R_IN / r));
+        const flux = g4 * Math.max(0, emis);
         const ri = Math.min(NR - 1, (Math.log(r / R_IN) / LOGSPAN * NR) | 0);
         let ph = pd; if (ph < 0) ph += Math.PI * 2;
         const cell = ri * NPH + Math.min(NPH - 1, (ph / (Math.PI * 2) * NPH) | 0);
         const s = k === 0 ? 0 : 1;
-        if (gb[s][cell] === 0) { gu[s][cell] = b; gv[s][cell] = psi; gb[s][cell] = bright; }
+        if (!go[s][cell]) {
+          go[s][cell] = 1; gu[s][cell] = b; gv[s][cell] = psi; gb[s][cell] = flux;
+          if (flux > gMax) gMax = flux;
+        }
+        // A geometrically thin disk is OPTICALLY THICK: the first crossing along the
+        // ray hides everything behind it. Recording later crossings too was rendering
+        // the secondary image on top of disk that should occlude it. The secondary
+        // survives only where the direct ray misses the annulus entirely -- which is
+        // exactly the band around the shadow where it is genuinely visible.
+        break;
       }
     }
   }
@@ -189,17 +222,17 @@ function buildMap(incDeg) {
       const ux = [], uy = [], br = [];
       for (let p = 0; p < NPH; p++) {
         const cell = ri * NPH + p;
-        const bb = gb[s][cell];
-        if (bb === 0) { ux.push(NaN); uy.push(NaN); br.push(0); continue; }
+        if (!go[s][cell]) { ux.push(NaN); uy.push(NaN); br.push(0); continue; }
         ux.push(gu[s][cell] * Math.cos(gv[s][cell]));
         uy.push(-gu[s][cell] * Math.sin(gv[s][cell]));
-        br.push(bb);
+        // normalise the physical flux, then tone-map for display
+        br.push(Math.pow(gb[s][cell] / (gMax || 1), DISPLAY_GAMMA));
       }
       if (br.filter((v) => v > 0).length < 12) continue;
       // group consecutive samples of the same brightness bucket into one run, so a
       // whole colour band strokes as a single sub-path instead of per-segment calls
       const bkt = br.map((v) => v === 0 ? -1
-        : v < 0.13 ? 0 : v < 0.34 ? 1 : v < 0.70 ? 2 : v < 1.35 ? 3 : 4);
+        : v < BAND[0] ? 0 : v < BAND[1] ? 1 : v < BAND[2] ? 2 : v < BAND[3] ? 3 : 4);
       const runs = [];
       let start = -1;
       for (let p = 0; p <= NPH; p++) {
@@ -322,8 +355,8 @@ function drawField(g, t, animate, dt) {
   g.strokeStyle = `rgba(${HOT},0.55)`; g.lineWidth = 1.6 * DPR; g.stroke(ring);
 
   // bloom under the hottest band
-  g.strokeStyle = `rgba(${BUCKETS[4].rgb},0.10)`;
-  g.lineWidth = 5 * DPR; g.stroke(paths[4]);
+  g.strokeStyle = `rgba(${BUCKETS[4].rgb},0.12)`;
+  g.lineWidth = 3.5 * DPR; g.stroke(paths[4]);
   for (let i = 0; i < BUCKETS.length; i++) {
     g.strokeStyle = `rgba(${BUCKETS[i].rgb},${BUCKETS[i].a})`;
     g.lineWidth = BUCKETS[i].w * DPR;
@@ -348,7 +381,7 @@ function drawField(g, t, animate, dt) {
       if (Number.isNaN(uxv)) { started = false; continue; }
       if (started && Math.hypot(uxv - pux, uyv - puy) > JUMP) started = false;
       pux = uxv; puy = uyv;
-      if (c.br[k] > 1.35) hot = true;
+      if (c.br[k] > HOT_AT) hot = true;
       const [rx, ry] = toScreen(uxv, uyv);
       const [x, y] = lensPoint(rx, ry);
       if (started) {
@@ -401,7 +434,7 @@ function drawField(g, t, animate, dt) {
       d.cap = 0.001; d.ox = x; d.oy = y;
       continue;
     }
-    (c.br[k] > 1.35 ? dWarm : dCool).rect(x, y, sz, sz);
+    (c.br[k] > HOT_AT ? dWarm : dCool).rect(x, y, sz, sz);
   }
   g.fillStyle = 'rgba(52,66,102,0.34)'; g.fill(dCool);
   g.fillStyle = `rgba(${HOT},0.5)`;     g.fill(dWarm);
