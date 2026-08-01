@@ -13,8 +13,10 @@ const rand = mulberry32(20260714);
 const projects = [
   {
     name: 'Multi-stream CCTV security',
-    line: 'A FastAPI detection service using YOLOv11 and DETR across concurrent camera streams, integrated with plate, face, and mask recognition.',
+    line: 'A FastAPI detection service using YOLOv11 and DETR across concurrent camera streams, integrated with plate, face, and mask recognition. Vehicle dwell-time measurement was one supporting subsystem.',
     chips: ['detection', 'streaming', 'FastAPI'],
+    href: 'https://github.com/Ibtisam-Mohammad/Vehicle_Wait_Time_Detector',
+    linkLabel: 'view the dwell-time demo →',
   },
   {
     name: 'Pose from partial bodies',
@@ -22,10 +24,11 @@ const projects = [
     chips: ['pose estimation', 'fine-tuning'],
   },
   {
-    name: 'Vehicle wait-time detection',
-    line: 'A public detection and tracking pipeline that measures vehicle dwell time inside a predefined region of interest.',
-    chips: ['tracking', 'open source'],
-    href: 'https://github.com/Ibtisam-Mohammad/Vehicle_Wait_Time_Detector',
+    name: 'Model-assisted annotation in CVAT',
+    line: 'Packaged a custom YOLOv11 detector as a Nuclio function so predictions arrive inside CVAT as editable annotations for human review.',
+    chips: ['annotation', 'YOLOv11', 'Nuclio'],
+    href: 'https://github.com/Ibtisam-Mohammad/custom-yolov11-auto-annotation-cvat',
+    linkLabel: 'view the integration →',
   },
 ];
 
@@ -136,7 +139,7 @@ const bones: [string, string][] = [
           <ul class="chip-row" role="list">
             {p.chips.map((c) => <li class="chip">{c}</li>)}
           </ul>
-          {p.href && <p class="mono proj-link"><a href={p.href}>view the repo →</a></p>}
+          {p.href && <p class="mono proj-link"><a href={p.href}>{p.linkLabel ?? 'view the repo →'}</a></p>}
         </li>
       ))}
     </ul>
