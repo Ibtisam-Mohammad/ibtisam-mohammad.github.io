@@ -20,6 +20,14 @@ const hasStory = Boolean(document.getElementById('hero'));
 initNotesInteractive();
 initNotebookInstruments();
 
+// Hero art builds in idle slices after load and runs on its own paused-when-hidden
+// loop (DESIGN.md log #14). Reduced-motion clients get one static frame — a finished
+// drawing, no orbital flow, no cursor lens — so it lives outside the anim gate.
+// Dynamic import: the module parses off the boot task, in its own post-load chunk.
+if (hasStory) {
+  import('./scenes/blackhole.js').then((m) => m.initBlackHole({ animate: anim }));
+}
+
 if (anim && hasStory) {
   // Scenes register their local turtle choreography before the document path is measured.
   performance.mark('b0');

@@ -35,6 +35,13 @@ const ticksD = [
 ---
 <section id="hero" class="section hero" style="--accent: var(--cobalt)">
   <div class="hero-pin">
+    <!-- Signature 1's second panel: a gravitationally lensed accretion disk, computed
+         from the geodesic equation at runtime (scenes/blackhole.js; derivations in
+         prototypes/blackhole.html). Decorative and desktop-only: no-JS and mobile
+         readers get the complete hero without it, so it carries no fallback markup. -->
+    <div class="hero-art" aria-hidden="true" data-vine-exclude>
+      <canvas data-blackhole></canvas>
+    </div>
     <div class="container">
     <h1 class="hero-name">
       <span class="duality-name" data-duality-name>
@@ -100,6 +107,29 @@ const ticksD = [
     display: grid;
     align-items: center;
     padding-block: var(--s-6);
+  }
+  /* the lensed disk fills the hero's right half and dissolves toward the text column
+     through the mask — the outer flow runs off-frame like the plotter cropped it.
+     pointer-events stays off: the canvas listens on the section, never blocks a click. */
+  .hero-art {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 48%;
+    right: 0;
+    pointer-events: none;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%);
+    mask-image: linear-gradient(90deg, transparent, #000 22%);
+  }
+  .hero-art canvas {
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 0.9s var(--ease);
+  }
+  .hero-art canvas.is-ready { opacity: 1; }
+  @media (max-width: 1023px) {
+    .hero-art { display: none; }
   }
   .hero-scene {
     width: 100%;
