@@ -84,7 +84,7 @@
 const M = 1, R_IN = 6, R_OUT = 58;
 const B_CRIT = 3 * Math.sqrt(3);
 const DPHI = 0.012, PHI_MAX = Math.PI * 3.4;
-const NPSI = 900, NR = 74, NPH = 260;
+const NPSI = 1050, NR = 74, NPH = 260;
 const B_MIN = 1.2, B_MAX = 62;
 const LOGSPAN = Math.log(R_OUT / R_IN);
 const CELLS = NR * NPH;
@@ -168,8 +168,21 @@ function buildBArray() {
   for (let i = 0; i < 120; i++) {
     a.push(B_CRIT + Math.exp(Math.log(0.006) + (Math.log(8) - Math.log(0.006)) * i / 119));
   }
-  for (let i = 0; i < 170; i++) a.push(B_CRIT + 8 + (B_MAX - B_CRIT - 8) * i / 169);
+  for (let i = 0; i < 210; i++) a.push(B_CRIT + 8 + (B_MAX - B_CRIT - 8) * i / 209);
   return a;
+}
+
+// smooth polyline out of the shared segment buffer: quadratic curves through sample
+// midpoints, so the per-cell kinks melt without inventing any new geometry
+const SEG = new Float32Array(NPH * 2 + 8);
+function strokeSmooth(p, n) {
+  p.moveTo(SEG[0], SEG[1]);
+  if (n === 2) { p.lineTo(SEG[2], SEG[3]); return; }
+  for (let i = 1; i < n - 1; i++) {
+    const x = SEG[i * 2], y = SEG[i * 2 + 1];
+    p.quadraticCurveTo(x, y, (x + SEG[i * 2 + 2]) / 2, (y + SEG[i * 2 + 3]) / 2);
+  }
+  p.lineTo(SEG[(n - 1) * 2], SEG[(n - 1) * 2 + 1]);
 }
 
 // ---- build: trace the sky, fill the (r, azimuth) grids, cut runs ---------------
@@ -223,6 +236,37 @@ function build(incDeg) {
           if (flux > gMax) gMax = flux;
         }
         break;   // optically thick: first material hit occludes the rest
+      }
+    }
+  }
+
+  // Bridge 1-2 cell holes whose shores agree. The fixed sky sampling undersamples
+  // exactly where near-edge-on compression packs many disk cells into few rays, and
+  // those holes fragmented the lines into dashes. Interpolating across a hole whose
+  // endpoints sit within the caustic threshold is honest reconstruction of a curve
+  // that is provably continuous there — invention would be filling ACROSS a caustic,
+  // which the JUMP test forbids.
+  for (let s = 0; s < 2; s++) {
+    for (let ri = 0; ri < NR; ri++) {
+      const base = ri * NPH;
+      for (let p = 1; p < NPH - 1; p++) {
+        const idx = base + p;
+        if (go[s][idx] || !go[s][idx - 1]) continue;
+        const width = go[s][idx + 1] ? 0 : (p + 2 < NPH && go[s][idx + 2] ? 1 : -1);
+        if (width < 0) continue;
+        const L = idx - 1, R = idx + 1 + width;
+        const dx = gux[s][R] - gux[s][L], dy = guy[s][R] - guy[s][L];
+        if (dx * dx + dy * dy > JUMP * JUMP) continue;
+        for (let q = 0; q <= width; q++) {
+          const t = (q + 1) / (width + 2);
+          const j = idx + q;
+          gux[s][j] = gux[s][L] + dx * t;
+          guy[s][j] = guy[s][L] + dy * t;
+          gfx[s][j] = gfx[s][L] + (gfx[s][R] - gfx[s][L]) * t;
+          gG[s][j] = gG[s][L] + (gG[s][R] - gG[s][L]) * t;
+          go[s][j] = 1;
+        }
+        p += width + 1;
       }
     }
   }
@@ -336,30 +380,36 @@ function drawBase(g, lensOn) {
     const p = paths[k] || (paths[k] = new Path2D());
     const hue = (k / 5) | 0, flux = k % 5;
     const wantNavy = k === 19, wantBloomC = k >= 18, wantBloomW = hue <= 1 && flux >= 3;
-    let started = false, psx = 0, psy = 0, pnx = 0, pny = 0, prd = 0;
+    let segN = 0, pnx = 0, pny = 0, prd = 0;
+    const flush = () => {
+      if (segN >= 2) {
+        strokeSmooth(p, segN);
+        if (wantNavy) strokeSmooth(navy, segN);
+        if (wantBloomC) strokeSmooth(bloomC, segN);
+        if (wantBloomW) strokeSmooth(bloomW, segN);
+      }
+      segN = 0;
+    };
     for (let i = i0; i <= i1; i++) {
       const idx = base + i;
       let x = toX(gux[s][idx]), y = toY(guy[s][idx]);
-      let nx = 0, ny = 0, rd = 0;
       if (lensOn) {
         const rawX = x, rawY = y;
         lensXY(x, y, LP);
-        rd = LP[2]; nx = (rawX - mx) / rd; ny = (rawY - my) / rd;
+        const rd = LP[2], nx = (rawX - mx) / rd, ny = (rawY - my) / rd;
         x = LP[0]; y = LP[1];
-        if (started) {
+        if (segN > 0) {
           // break where the lens tears the curve: endpoints on opposite sides of
           // the cursor, or a segment stretched far beyond its unlensed length
           const dRaw = Math.hypot(rawX - (mx + pnx * prd), rawY - (my + pny * prd));
-          const dMap = Math.hypot(x - psx, y - psy);
-          if (nx * pnx + ny * pny < 0.2 || dMap > Math.max(60 * DPR, dRaw * 8)) started = false;
+          const dMap = Math.hypot(x - SEG[(segN - 1) * 2], y - SEG[(segN - 1) * 2 + 1]);
+          if (nx * pnx + ny * pny < 0.2 || dMap > Math.max(60 * DPR, dRaw * 8)) flush();
         }
+        pnx = nx; pny = ny; prd = rd;
       }
-      if (started) p.lineTo(x, y); else { p.moveTo(x, y); started = true; }
-      if (wantNavy) { if (i === i0) navy.moveTo(x, y); else navy.lineTo(x, y); }
-      if (wantBloomC) { if (i === i0) bloomC.moveTo(x, y); else bloomC.lineTo(x, y); }
-      if (wantBloomW) { if (i === i0) bloomW.moveTo(x, y); else bloomW.lineTo(x, y); }
-      psx = x; psy = y; pnx = nx; pny = ny; prd = rd;
+      SEG[segN * 2] = x; SEG[segN * 2 + 1] = y; segN++;
     }
+    flush();
   }
 
   g.lineCap = 'round'; g.lineJoin = 'round';
@@ -390,15 +440,16 @@ function drawDyn(g, t, animate, dt, lensOn) {
     // PREVIOUS streak left off in the other path — the fan of stray chords.
     const headIdx = base + ((((ph % 1) + 1) % 1) * NPH | 0);
     const path = go[s][headIdx] && gG[s][headIdx] < GH[1] ? warm : cool;
-    let started = false, psx = 0, psy = 0, pux = 0, puy = 0, pnx = 0, pny = 0, prd = 0;
+    let segN = 0, pux = 0, puy = 0, pnx = 0, pny = 0, prd = 0;
+    const flush = () => { if (segN >= 2) strokeSmooth(path, segN); segN = 0; };
     for (let q = 0; q < FLOW_LEN; q++) {
       const p = (((ph + q / NPH) % 1) * NPH) | 0;
       const idx = base + p;
-      if (!go[s][idx]) { started = false; continue; }
+      if (!go[s][idx]) { flush(); continue; }
       const uxv = gux[s][idx], uyv = guy[s][idx];
-      if (started) {
+      if (segN > 0) {
         const dx = uxv - pux, dy = uyv - puy;
-        if (dx * dx + dy * dy > JUMP * JUMP) started = false;
+        if (dx * dx + dy * dy > JUMP * JUMP) flush();
       }
       pux = uxv; puy = uyv;
       let x = toX(uxv), y = toY(uyv);
@@ -407,13 +458,13 @@ function drawDyn(g, t, animate, dt, lensOn) {
         lensXY(x, y, LP);
         const rd = LP[2], nx = (rawX - mx) / rd, ny = (rawY - my) / rd;
         x = LP[0]; y = LP[1];
-        if (started && (nx * pnx + ny * pny < 0.2
-          || Math.hypot(x - psx, y - psy) > Math.max(60 * DPR, Math.hypot(rawX - (mx + pnx * prd), rawY - (my + pny * prd)) * 8))) started = false;
+        if (segN > 0 && (nx * pnx + ny * pny < 0.2
+          || Math.hypot(x - SEG[(segN - 1) * 2], y - SEG[(segN - 1) * 2 + 1]) > Math.max(60 * DPR, Math.hypot(rawX - (mx + pnx * prd), rawY - (my + pny * prd)) * 8))) flush();
         pnx = nx; pny = ny; prd = rd;
       }
-      if (started) path.lineTo(x, y); else { path.moveTo(x, y); started = true; }
-      psx = x; psy = y;
+      SEG[segN * 2] = x; SEG[segN * 2 + 1] = y; segN++;
     }
+    flush();
   }
   g.lineCap = 'round';
   g.strokeStyle = 'rgba(60,78,120,0.22)'; g.lineWidth = 1.0 * DPR; g.stroke(cool);
@@ -424,7 +475,10 @@ function drawDyn(g, t, animate, dt, lensOn) {
   // captured and spiral in, heating as they fall
   const dCool = new Path2D(), dWarm = new Path2D();
   const bCool = new Path2D(), bWarm = new Path2D(), counter = new Path2D();
-  const fall = new Path2D();
+  // Infall trails thin as material is dragged off the disk into the void — the heat
+  // shows at the knot on the mass, not along the thread. One bright path made a
+  // dense gold nest whenever the cursor grazed the disk from empty paper.
+  const fallA = new Path2D(), fallB = new Path2D(), fallC = new Path2D();
   const sz = Math.max(1, 1.1 * DPR);
   let falling = 0;
   for (let n = 0; n < NDOTS; n++) {
@@ -432,6 +486,7 @@ function drawDyn(g, t, animate, dt, lensOn) {
       falling++;
       dCap[n] += dt / INFALL_T;
       if (dCap[n] >= 1) { dCap[n] = 0; continue; }
+      const fall = dCap[n] < 0.35 ? fallA : dCap[n] < 0.7 ? fallB : fallC;
       const ang0 = Math.atan2(dOy[n] - my, dOx[n] - mx);
       const r0 = Math.hypot(dOx[n] - mx, dOy[n] - my);
       let started = false;
@@ -483,9 +538,10 @@ function drawDyn(g, t, animate, dt, lensOn) {
   g.fillStyle = 'rgba(176,118,44,0.80)'; g.fill(bWarm);
   g.fillStyle = 'rgba(100,104,124,0.22)'; g.fill(counter);
   if (falling) {
-    g.strokeStyle = `rgba(${EMBER},${(0.55 * influence).toFixed(3)})`;
     g.lineWidth = 1.2 * DPR;
-    g.stroke(fall);
+    g.strokeStyle = `rgba(${EMBER},${(0.50 * influence).toFixed(3)})`; g.stroke(fallA);
+    g.strokeStyle = `rgba(${EMBER},${(0.28 * influence).toFixed(3)})`; g.stroke(fallB);
+    g.strokeStyle = `rgba(${EMBER},${(0.13 * influence).toFixed(3)})`; g.stroke(fallC);
   }
   lastFalling = falling;
 
@@ -514,7 +570,10 @@ const NOTES = [
   { text: 'secondary image', ax: 0.9, ay: 6.4, lx: 66, ly: 40 },
 ];
 function drawNotes(g) {
-  const a = Math.max(0, 0.9 - 0.6 * influence);
+  // near edge-on the dome grows up into the label positions (offsets were tuned at
+  // ~82°); above 84° the drawing needs the room more than the reader needs the labels
+  const incFade = Math.min(1, Math.max(0, (84 - inc) / 4));
+  const a = Math.max(0, 0.9 - 0.6 * influence) * incFade;
   if (a < 0.05) return;
   g.font = `${11 * DPR}px ui-monospace, SFMono-Regular, Menlo, monospace`;
   g.textBaseline = 'middle';

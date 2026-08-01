@@ -17,7 +17,7 @@ const shot = async (name) => { const el = await page.$('#c'); await el.screensho
 const hud = () => page.evaluate(() => document.getElementById('hud').textContent);
 const results = {};
 
-for (const inc of [78, 62, 30]) {
+for (const inc of [86, 78, 30]) {
   await page.evaluate((v) => {
     const el = document.getElementById('inc'); el.value = String(v);
     el.dispatchEvent(new Event('input'));
