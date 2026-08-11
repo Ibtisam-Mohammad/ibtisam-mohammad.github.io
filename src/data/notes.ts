@@ -33,6 +33,72 @@ export interface Note {
 
 export const notes: Note[] = [
   {
+    slug: 'office-add-in-window-identity',
+    published: '2026-07-23',
+    modified: '2026-08-11',
+    title: 'Office.js cannot tell you which Project window you are in',
+    kind: 'field note',
+    dek: 'Office.js returns whichever Microsoft Project window has focus, so a task pane has no way to know which schedule it belongs to. We ended up with a compiled add-in that hands the pane its own identity.',
+    accent: 'ember',
+    tags: [{ t: 'desktop integration', a: 'ember' }, { t: 'debugging', a: 'cobalt' }],
+    sourceUrl: 'https://learn.microsoft.com/en-us/javascript/api/office/office.projectprojectfields',
+    sourceLabel: 'Office.js ProjectProjectFields reference',
+    sections: [
+      {
+        heading: 'The answer went to the wrong file',
+        blocks: [
+          { type: 'p', text: 'A user with two schedules open asked a question about the second one, and the answer was saved into the first one’s chat history. Nothing raised an error. Other reports arrived the same week and did not obviously belong together: conversations that reset on the first message, and one titled “Untitled Project chat” whose file, BV5.mpp, had been saved on disk for months.' },
+          { type: 'p', text: 'Our assistant runs as a task pane, a small web application docked beside the Gantt chart. When it opens it asks Office.js which project is open, takes the ID it receives, and uses that to find the right conversation or start a new one. Every Office add-in sample does it this way.' },
+        ],
+      },
+      {
+        heading: 'What we fixed first',
+        blocks: [
+          { type: 'p', text: 'For weeks we assumed all three reports came from bugs in our own code.' },
+          { type: 'list', items: ['Fill in the project id later, when the first message arrives, in case the conversation was created before Office.js was ready.', 'Clear the saved project data whenever the user switches files.', 'Loosen the project-name comparison, because some users title their files in two languages and a strict match rejected them.'] },
+          { type: 'p', text: 'The complaints dropped after each fix but never stopped. We took that as progress and spent more weeks on the same theory.' },
+        ],
+      },
+      {
+        heading: 'One application, one active project',
+        blocks: [
+          { type: 'p', text: 'When the pane starts, it calls Office.context.document to ask which project it should load. Microsoft Project answers by looking at which window is currently in front, not at which window the pane is sitting in. So if the user clicked into another schedule in the half second since the pane opened, Office.js returns that other schedule instead.' },
+          { type: 'p', text: 'Word opens each document in its own window with its own copy of the add-in, so a pane in Word can ask which document it belongs to. Microsoft Project holds every open schedule inside one application and tracks only one of them as active. The API hands that one answer to every pane that asks.' },
+          { type: 'callout', title: 'The defect', text: 'A pane cannot ask which window it is running in. Office.js has no API for that question, so no fix inside our own code could have worked.' },
+          { type: 'p', text: 'That explains all three reports. Two panes opening in the same moment attach to the same schedule, because they ask in the same moment. A pane that keeps checking follows the user’s focus into another document and writes there. The pane was also asking two sources at once, its own read and the backend, with nothing to say which answer was newer, so the wrong answer could arrive last and overwrite the right one.' },
+        ],
+      },
+      {
+        heading: 'Office.js had pushed us out before',
+        blocks: [
+          { type: 'p', text: 'Office.js had already pushed us into native code twice before this, for reasons that had nothing to do with window identity.' },
+          { type: 'p', text: 'The first automation layer was VBA installed into Project’s own macro environment, with a Proj_Change handler polling a bridge endpoint. It reached the real object model, which Office.js cannot, but it required macro trust, modified Global.MPT, gave us no control over which version a user was actually running, and could be switched off by policy.' },
+          { type: 'p', text: 'Then we wrote a marker into the Text30 field of the project summary task, to signal that a sync was pending. Office.js cannot write that field when “Show Project Summary Task” is turned off in Project Options, so a display setting we could not see decided whether our write went through. We rerouted the write through COM, and we reverted it the next day.' },
+          { type: 'p', text: 'Then an Office.js poller that reports which project is open, so customers who install nothing still get identity tracking. It carries the same defect, because it reads through the same API. If it happens to read while a different window is in front, mainly when the pane reloads without focus, it reports the wrong project and nothing later corrects it.' },
+        ],
+      },
+      {
+        heading: 'The pane is handed a token',
+        blocks: [
+          { type: 'p', text: 'Before the C# add-in existed, we shipped a stopgap: the pane reads the project once when it opens, locks it, and never checks again. The comment saying so is still at the top of that file. Locking stops the pane from wandering to other schedules, but the pane also never notices a real switch, so a user who opens a different document in the same window has to pick the right conversation by hand from the session list.' },
+          { type: 'p', text: 'Then we stopped asking altogether. If the pane cannot discover which window it belongs to, something that already knows has to tell it.' },
+          { type: 'p', text: 'A second add-in, written in C#, runs inside Microsoft Project itself. From there it can use Project’s own internal interface (COM), which does know about every open window. Its timer runs on the Office UI thread, so those calls can be made directly. It gives every open schedule a stable token, keyed on the file’s full path when saved and on its name when not.' },
+          { type: 'code', language: 'text', code: 'taskpane.html?window_token=wt-4f2a9c1b7e03\n\nGET /projects/active?window_token=wt-4f2a9c1b7e03' },
+          { type: 'p', text: 'The add-in then opens the task pane itself, from a button on the ribbon, with that token already in the URL. So the pane never has to work out which schedule it belongs to, because the add-in has already told it. When the pane asks the backend anything, it sends the token along, and the backend looks up that exact window instead of naming whichever one has focus.' },
+          { type: 'p', text: 'We key identity on the file path rather than the GUID, because Microsoft Project returns the literal string “No” for the GUID field on most files. Two pieces of code build that identity string, one in C# and one in JavaScript, and they have to agree byte for byte, because the backend routes everything by that string.' },
+        ],
+      },
+      {
+        heading: 'Stale identity, and what it cost',
+        blocks: [
+          { type: 'p', text: 'In July the panes started attaching to the wrong project again. They were throwing away identity data older than twenty seconds and going back to Office.js. But old identity data is still correct, because a file path does not change while the data sits there getting old. Only the task list changes. We let the pane accept the old identity, asked the add-in for fresh data as soon as the pane opened, and dropped Office.js to a last resort.' },
+          { type: 'p', text: 'The fix carried its own costs. The add-in needs a runtime, an installer, and a trust prompt on every machine. Its first version read the entire project over COM every eight seconds and made Project feel slow on large plans, so it now reads only when the user sends a message. Google Drive later blocked one of our builds as a virus before it reached the client.' },
+          { type: 'callout', title: 'Still open', text: 'A pane opened from the Add-ins menu, on a machine with no connector installed, has no token and falls back to the globally active project exactly as before.' },
+        ],
+      },
+    ],
+  },
+  {
     slug: 'fara-7b-on-12gb-vram',
     published: '2025-12-24',
     modified: '2026-07-27',
