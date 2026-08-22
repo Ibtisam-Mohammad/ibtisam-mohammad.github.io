@@ -1,6 +1,8 @@
 node_modules/
 dist/
 .astro/
+.env
+.env.local
 
 # generated build cache (TTF derived from the shipped woff2)
 scripts/.cache/

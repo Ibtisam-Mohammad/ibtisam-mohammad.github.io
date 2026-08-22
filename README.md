@@ -57,6 +57,26 @@ npm run build     # static build to dist/
 npm run preview   # serve dist/
 ```
 
+## Analytics
+
+The site includes a conditional GoatCounter integration. It emits no tracking script
+until `PUBLIC_GOATCOUNTER_ENDPOINT` is configured. Create a free GoatCounter site and
+set the endpoint to `https://YOUR-SITE-CODE.goatcounter.com/count`.
+
+For GitHub Pages deployments, add a repository **Variable** named
+`GOATCOUNTER_ENDPOINT` with that endpoint. This is deliberately a variable rather than
+a secret: the endpoint is included in the public page source and is not a credential.
+The deployment workflow passes it to Astro at build time.
+
+Tracked automatically: page visits, referrers, UTM campaigns, location, browser,
+operating system, screen width, note opens, resume views, email/copy-email actions,
+booking/GitHub/LinkedIn and other outbound clicks, section views, scroll depth, and
+30-second active reading. Never put names, email addresses, job titles, or other
+personal data in UTM parameters.
+
+For local verification, copy [`.env.example`](.env.example) to `.env.local` and set
+your endpoint. `.env.local` is ignored by Git.
+
 Stack: Astro 5 (static output, no client framework), KaTeX rendered at build time, self-hosted subset fonts. The scroll engine is hand-written vanilla JS — no animation libraries.
 
 ## The scroll engine (src/scripts/)
