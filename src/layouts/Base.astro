@@ -64,27 +64,11 @@ const goatCounterEndpoint = import.meta.env.PUBLIC_GOATCOUNTER_ENDPOINT;
     </script>
     {goatCounterEndpoint && (
       <>
-        <script is:inline>
-          window.__goatcounterQueue = [];
-          window.goatcounterTrack = function (data) {
-            if (window.goatcounter && typeof window.goatcounter.count === 'function') {
-              window.goatcounter.count(data);
-            } else {
-              window.__goatcounterQueue.push(data);
-            }
-          };
-          window.__flushGoatCounterQueue = function () {
-            var queue = window.__goatcounterQueue || [];
-            window.__goatcounterQueue = [];
-            for (var i = 0; i < queue.length; i++) window.goatcounter.count(queue[i]);
-          };
-        </script>
         <script
           is:inline
           data-goatcounter={goatCounterEndpoint}
           async
           src="https://gc.zgo.at/count.js"
-          onload="window.__flushGoatCounterQueue && window.__flushGoatCounterQueue()"
         ></script>
         <noscript>
           <img src={`${goatCounterEndpoint}?p=${encodeURIComponent(Astro.url.pathname)}`} alt="" width="1" height="1" />
@@ -103,10 +87,5 @@ const goatCounterEndpoint = import.meta.env.PUBLIC_GOATCOUNTER_ENDPOINT;
     <script>
       import '../scripts/main.js';
     </script>
-    {goatCounterEndpoint && (
-      <script>
-        import '../scripts/analytics.js';
-      </script>
-    )}
   </body>
 </html>

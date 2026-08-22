@@ -69,9 +69,9 @@ a secret: the endpoint is included in the public page source and is not a creden
 The deployment workflow passes it to Astro at build time.
 
 Tracked automatically: page visits, referrers, UTM campaigns, location, browser,
-operating system, screen width, note opens, resume views, email/copy-email actions,
-booking/GitHub/LinkedIn and other outbound clicks, section views, scroll depth, and
-30-second active reading. Never put names, email addresses, job titles, or other
+operating system, and screen width. GoatCounter's main dashboard totals page visits
+and custom events together, so this portfolio deliberately keeps conversion events
+out of the primary property. Never put names, email addresses, job titles, or other
 personal data in UTM parameters.
 
 For local verification, copy [`.env.example`](.env.example) to `.env.local` and set
