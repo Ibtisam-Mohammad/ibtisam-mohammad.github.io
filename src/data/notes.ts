@@ -8,6 +8,8 @@ export interface NoteTag {
 export type NoteBlock =
   | { type: 'p'; text: string }
   | { type: 'list'; items: string[] }
+  | { type: 'links'; items: { label: string; href: string }[] }
+  | { type: 'table'; headers: string[]; rows: string[][] }
   | { type: 'code'; language: string; code: string }
   | { type: 'callout'; title: string; text: string };
 
@@ -32,6 +34,174 @@ export interface Note {
 }
 
 export const notes: Note[] = [
+  {
+    slug: 'qwen38-27b-on-12gb-rtx-3060',
+    published: '2026-08-25',
+    title: 'Qwen3.8-27B on an RTX 3060 with 12 GB of VRAM',
+    kind: 'field note',
+    dek: 'A local llama.cpp run of a roughly 2-bit Qwen3.8-27B, using native multi-token prediction and a 32k context. The server generated 29-33 tok/s; GPQA Diamond and IFBench mapped the quality cost of the quant.',
+    accent: 'cobalt',
+    tags: [{ t: 'quantization', a: 'cobalt' }, { t: 'evals', a: 'teal' }, { t: 'agents', a: 'violet' }],
+    sourceUrl: 'https://huggingface.co/Qwen/Qwen3.8-27B',
+    sourceLabel: 'Qwen3.8-27B model card',
+    sections: [
+      {
+        heading: 'Scope of the test',
+        blocks: [
+          { type: 'p', text: 'Qwen3.8-27B is a 27B open model with native multi-token prediction and a 262,144-token context window. Its benchmark table made it worth trying on my RTX 3060, a card with 12 GB of VRAM.' },
+          { type: 'p', text: 'The model ran after aggressive quantization. That detail sets the boundary for every number in this article: the official benchmarks describe the full model, while this note covers one constrained local build.' },
+          { type: 'callout', title: 'Result in one line', text: 'The final IQ2_S configuration sustained roughly 29-33 generated tokens per second at a 32k configured context. It scored 67.17% on GPQA Diamond and 55.0% on IFBench.' },
+        ],
+      },
+      {
+        heading: 'The machine',
+        blocks: [
+          { type: 'table', headers: ['Component', 'Hardware'], rows: [
+            ['GPU', 'NVIDIA GeForce RTX 3060, 12 GB VRAM'],
+            ['CPU', 'Intel Core i5-14400F'],
+            ['System memory', '24 GB DDR4-3200'],
+            ['Motherboard', 'ASUS PRIME H610M-E D4'],
+            ['Operating system', 'Windows'],
+          ] },
+          { type: 'p', text: 'The machine was not built for inference, and the GPU had previously spent time mining. I checked the old power limits and clock offsets before looking at the model. They were not the source of the result. Sustained runs reached the expected clock range, with Armoury Crate reporting 93-96% GPU use.' },
+          { type: 'p', text: 'Cooling needed attention during long benchmarks. The GPU reached about 78.5 C and the CPU package reached 87 C. Removing the side panel brought them to roughly 73.9 C and 78 C, which made the run safer without materially changing the 30 tok/s decode rate.' },
+        ],
+      },
+      {
+        heading: 'Find the right runtime before tuning',
+        blocks: [
+          { type: 'p', text: 'The first search used the wrong name, Qwen 3.7-27B, before I corrected it to Qwen3.8-27B. Recent model releases leave behind plenty of stale discussion. A small naming error can lead to an old conversion or a runtime with no support for the architecture.' },
+          { type: 'p', text: 'Old llama.cpp folders were spread across Windows, WSL, and I:\\AI, so I installed one clean CUDA build and pointed OpenCode at it. The device check reported CUDA0: NVIDIA GeForce RTX 3060 (12287 MiB, 11243 MiB free).' },
+          { type: 'callout', title: 'Check the build', text: 'llama-server.exe can be a CPU build. It can also start without the CUDA runtime files it needs. Run llama-server --list-devices. Keep the server timing log. Task Manager is not a sufficient check.' },
+        ],
+      },
+      {
+        heading: 'The quantization trap',
+        blocks: [
+          { type: 'p', text: 'A dense 27B model has no comfortable place in 12 GB of VRAM at four or five bits per weight. Q4_K_M alone is about 17.8 GB, before the KV cache, CUDA buffers, or an MTP draft model. Q3 leaves little room for useful context.' },
+          { type: 'p', text: 'I first downloaded an Unsloth UD-IQ2_XXS file of about 9.0 GB, then settled on Qwen3.8-27B-UD-IQ2_S.gguf with a Q4_0 MTP draft module. The target was roughly two bits per weight. It shared the card with the draft model and a quantized 32k KV cache, so the official scores were never an expectation for this configuration.' },
+          { type: 'p', text: 'At first, the model was fast enough to look convincing. It produced coherent text and long reasoning traces. An SVG dragon changed the picture: the output was poor, and tokens per second stopped looking like a useful measure of quality.' },
+        ],
+      },
+      {
+        heading: 'The configuration that fit',
+        blocks: [
+          { type: 'p', text: 'The stable profile used a 32,768-token context. Qwen supports a much larger native window, though the advertised limit says nothing about the memory available to a given quantization on a specific GPU.' },
+          { type: 'code', language: 'powershell', code: '.\\llama-server.exe `\n  -m I:\\AI\\qwen\\models\\unsloth-dynamic3\\Qwen3.8-27B-UD-IQ2_S.gguf `\n  -a qwen38-local `\n  --no-mmproj `\n  -c 32768 `\n  -np 1 `\n  -ngl all `\n  -fit off `\n  -fa on `\n  -ctk q4_0 `\n  -ctv q4_0 `\n  -b 512 `\n  -ub 128 `\n  --no-cont-batching `\n  --reasoning-preserve `\n  --reasoning-format deepseek `\n  --reasoning-effort medium `\n  --reasoning-budget 4096 `\n  --temp 1.0 `\n  --top-p 0.95 `\n  --top-k 20 `\n  --min-p 0.0 `\n  --repeat-penalty 1.0 `\n  --ctx-checkpoints 0 `\n  --cache-ram 0 `\n  --jinja `\n  --host 127.0.0.1 `\n  --port 8081 `\n  -md I:\\AI\\qwen\\models\\unsloth-dynamic3\\mtp-Qwen3.8-27B-Q4_0.gguf `\n  --spec-draft-ngl all `\n  --spec-default `\n  --spec-type draft-mtp `\n  --spec-draft-n-max 2 `\n  --spec-draft-type-k q4_0 `\n  --spec-draft-type-v q4_0' },
+          { type: 'list', items: [
+            '--no-mmproj avoided paying VRAM for a vision projector that OpenCode did not need.',
+            '-ngl all kept the target model on the GPU. Crossing PCIe for every generated token would have cost too much speed.',
+            '-ctk q4_0 and -ctv q4_0 compressed the KV cache, allowing the target, draft module, and 32k context to share the card.',
+            '-np 1 and --no-cont-batching reserved the server for one interactive user, which suited a personal endpoint.',
+            '-fit off kept llama.cpp from changing the requested fit, and it removed a safety margin that the xhigh test later exposed.',
+          ] },
+        ],
+      },
+      {
+        heading: 'Native MTP was the speed win',
+        blocks: [
+          { type: 'p', text: 'Native multi-token prediction gave the most repeatable improvement. The draft module proposes a short sequence, then the full model verifies each proposed token. The target model still makes the final decision.' },
+          { type: 'table', headers: ['Method or profile', 'Measured decode rate', 'What I saw'], rows: [
+            ['Native MTP, representative 32k runs', '32.1-33.5 tok/s', 'Usually high draft acceptance'],
+            ['Native MTP, long xhigh trace', 'About 29 tok/s', 'More than 12k generated tokens before OOM'],
+            ['Hybrid speculative tests', '28.1-30.9 tok/s', 'No clear win over native MTP'],
+            ['N-gram speculative, 512-token samples', '19.3-34.1 tok/s', 'Large variance; short bursts misled'],
+            ['Long-prompt prefill', 'About 410 tok/s', '14,399-token recorded prompt'],
+          ] },
+          { type: 'p', text: 'Representative MTP runs decoded at 32-33.5 tok/s, with draft acceptance usually between 84% and 99%. A long xhigh trace settled near 29 tok/s. The useful figure for this setup is therefore 29-33 tok/s.' },
+          { type: 'p', text: 'N-gram speculation once reported a burst above 90 tok/s, though full 512-token samples came in at 19.3-34.1 tok/s. The method was too variable for the final setup. Prefill speed, draft acceptance, and target decode speed belong in separate measurements.' },
+        ],
+      },
+      {
+        heading: 'OpenCode and the misleading GPU graph',
+        blocks: [
+          { type: 'p', text: "I removed the WSL copy of OpenCode and used the native Windows version, calling llama.cpp through http://127.0.0.1:8081/v1. The first prompt was hi, and it took long enough to look broken." },
+          { type: 'p', text: 'Task Manager added confusion. Its GPU menu may show 3D, Copy, Video Encode, Security, or OFA, and a clean CUDA graph is not guaranteed. CUDA work can sit under an unexpected engine. I used nvidia-smi, server timings, VRAM residency, GPU clocks, and MTP acceptance instead.' },
+          { type: 'p', text: 'OpenCode sends more than the visible prompt. A greeting carries a system prompt, tool definitions, and environment context. Qwen also had permission to reason before replying, so small user input can produce a large request.' },
+        ],
+      },
+      {
+        heading: 'Temperature zero was deliberate',
+        blocks: [
+          { type: 'p', text: 'The ordinary server sampler used temperature 1.0, top_p 0.95, and top_k 20. Benchmarks set temperature to 0 because IFBench asks for deterministic generation and GPQA comparisons become harder to read when every request samples a new answer.' },
+          { type: 'p', text: 'Temperature 0 makes a repetition loop repeatable after it begins. The wider setup supplied the rest: an extreme quant, prompts with exact symbolic constraints, a model that sometimes kept planning without closing its reasoning block, repeat_penalty at 1.0, and DRY sampling turned off.' },
+        ],
+      },
+      {
+        heading: 'IFBench exposed the cost',
+        blocks: [
+          { type: 'p', text: 'The dragon was enough to rule out hand-written prompts, so I used IFBench next. Its 300 prompts contain verifiable constraints covering word counts, vowel rules, indentation, nested bullets, repeated keywords, sentence lengths, and overlap ratios. Fluent prose can still fail these tests.' },
+          { type: 'p', text: 'The first run had a collector bug: reasoning text landed in the response field. I changed the collector to stream tokens, store reasoning_content separately, checkpoint every answer, and mark responses without a final answer. The clean run used IQ2_S, a Q4_0 MTP draft, 32k context, medium reasoning, a 4,096-token budget, temperature 0, and one request at a time.' },
+          { type: 'table', headers: ['IFBench metric', 'Result'], rows: [
+            ['Loose prompt-level', '165 / 300, 55.00%'],
+            ['Strict prompt-level', '155 / 300, 51.67%'],
+            ['Loose instruction-level', '197 / 344, 57.27%'],
+            ['Strict instruction-level', '185 / 344, 53.78%'],
+          ] },
+          { type: 'p', text: "The run took 7 hours, 8 minutes, and 43 seconds, or 85.75 seconds per prompt on average. Qwen's full-quality model card reports 79.5. My result came from a roughly 2-bit GGUF through llama.cpp, with a quantized KV cache, medium thinking, and a 4k reasoning budget." },
+          { type: 'p', text: 'Nineteen responses ended inside reasoning with no usable final answer. Giving every one of them a pass would only move the score to about 58.7%. The rest were ordinary instruction failures, especially character arithmetic, overlap ratios, syllable constraints, vowel and consonant conditions, indentation, and nested formatting.' },
+          { type: 'p', text: 'Some traces ran for a very long time. The model would plan, recount, find an error, and restart, then repeat the same sequence. Anyone who has watched a model count five words for ten minutes will recognise it.' },
+        ],
+      },
+      {
+        heading: 'GPQA Diamond',
+        blocks: [
+          { type: 'p', text: 'IFBench covers precise instruction following, whereas GPQA Diamond tests difficult scientific questions. I ran its 198-question subset through LM Evaluation Harness 0.4.12 using the zero-shot chain-of-thought task. The harness sent one request at a time, applied the chat template, used temperature 0, and allowed up to 32,768 generated tokens. The server kept medium reasoning and a 4,096-token reasoning budget.' },
+          { type: 'table', headers: ['GPQA Diamond metric', 'Result'], rows: [
+            ['Flexible answer extraction', '133 / 198, 67.17%'],
+            ['Standard error', '+/- 3.35 percentage points'],
+            ['Strict phrase extraction', '8 / 198, 4.04%'],
+          ] },
+          { type: 'p', text: 'The evaluation took just over five hours. The 4.04% strict figure came from the extractor, which expected a phrase beginning with The answer is. Qwen often ended with (B) or put the selected option in a sentence. The flexible extractor found 133 correct choices, making 67.17% the relevant number for this run.' },
+          { type: 'p', text: "GPQA has 198 questions, so a handful of answers moves the percentage. The result sits below Qwen's official 89.2 and does not make this machine comparable to every system in the 65-70% range. It did change my view of the quant: the IQ2 model could still work through hard science questions, though exact symbolic and formatting work remained weak." },
+        ],
+      },
+      {
+        heading: 'The xhigh run',
+        blocks: [
+          { type: 'p', text: 'I selected 24 GPQA questions that medium reasoning had missed. The IQ2_S weights, prompts, choices, temperature, MTP module, and 32k context stayed in place. I changed the server to xhigh reasoning with a 16,384-token budget.' },
+          { type: 'p', text: 'Twelve questions returned usable answers before the run stopped. Six were now correct and six were still wrong. The sample came from previous failures, so it is not a GPQA score. It does show that the 4k medium budget left some answers behind.' },
+          { type: 'p', text: 'The server then started logging bad allocation errors. One response passed 12,000 generated tokens at about 29 tok/s, and CUDA ran out of memory at 12,768 context tokens. The target model, MTP model, two KV caches, CUDA buffers, desktop display, and long response had exhausted the card.' },
+          { type: 'callout', title: 'A safer follow-up', text: 'Use less context and restore llama.cpp fit safety. Set an 8k or 12k reasoning budget. Remove MTP for the quality test if necessary. More system RAM may help hybrid experiments, although it will not raise the speed of fully GPU-resident decoding.' },
+        ],
+      },
+      {
+        heading: 'Notes for the next run',
+        blocks: [
+          { type: 'p', text: 'I would start with the benchmark rather than the dragon.' },
+          { type: 'list', items: [
+            'Set a quality floor before downloading, and treat a model that only fits at IQ2 as an experiment.',
+            'Verify the CUDA build immediately with llama-server --list-devices. Do not infer GPU acceleration from Task Manager alone.',
+            'Run a small fixed set before tuning. Include a coding task, scientific questions, and exact-format prompts.',
+            'Store reasoning separately from the final answer, so evaluators do not score hidden planning or lose a valid answer at the boundary.',
+            'Change one variable at a time. Context, quant, KV precision, MTP, reasoning effort, temperature, and repetition controls interact.',
+          ] },
+        ],
+      },
+      {
+        heading: 'Where I landed',
+        blocks: [
+          { type: 'p', text: 'Qwen3.8-27B can run on a 12 GB RTX 3060. Full CUDA offload, Q4 KV caches, Flash Attention, and native MTP gave 29-33 tok/s at a 32k configured context.' },
+          { type: 'p', text: 'This was an IQ2 version of Qwen3.8-27B. The official model card reports 89.2 on GPQA and 79.5 on IFBench. The local run reached 67.17% on GPQA Diamond and 55.0% on IFBench, and the two benchmarks describe different parts of the loss from quantization.' },
+          { type: 'p', text: 'The setup is useful for experiments, long-form chat, and some coding work. For dependable local work on this card, I would use a 12B-14B model at Q5 or Q6, where the quality floor is clearer. The 30 tok/s figure was fine. The instruction-following failures were the important result.' },
+        ],
+      },
+      {
+        heading: 'Sources and reproduction',
+        blocks: [
+          { type: 'links', items: [
+            { label: 'Qwen3.8-27B model card', href: 'https://huggingface.co/Qwen/Qwen3.8-27B' },
+            { label: 'Unsloth Qwen3.8-27B GGUF files', href: 'https://huggingface.co/unsloth/Qwen3.8-27B-GGUF' },
+            { label: 'llama.cpp', href: 'https://github.com/ggml-org/llama.cpp' },
+            { label: 'IFBench', href: 'https://github.com/allenai/IFBench' },
+            { label: 'GPQA paper and dataset', href: 'https://arxiv.org/abs/2311.12022' },
+            { label: 'LM Evaluation Harness', href: 'https://github.com/EleutherAI/lm-evaluation-harness' },
+          ] },
+          { type: 'p', text: 'All local figures came from saved llama.cpp logs, checkpointed JSONL responses, and evaluator output from the machine above. The xhigh subset is incomplete, so it is reported as a diagnostic rather than a benchmark.' },
+        ],
+      },
+    ],
+  },
   {
     slug: 'office-add-in-window-identity',
     published: '2026-07-23',

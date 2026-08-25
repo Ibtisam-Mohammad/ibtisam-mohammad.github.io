@@ -143,6 +143,19 @@ const structuredData = {
             {section.blocks.map((block) => {
               if (block.type === 'p') return <p>{block.text}</p>;
               if (block.type === 'list') return <ul>{block.items.map((item) => <li>{item}</li>)}</ul>;
+              if (block.type === 'links') return (
+                <ul class="source-list">
+                  {block.items.map((item) => <li><a href={item.href}>{item.label} &#8599;</a></li>)}
+                </ul>
+              );
+              if (block.type === 'table') return (
+                <div class="table-wrap" tabindex="0">
+                  <table>
+                    <thead><tr>{block.headers.map((header) => <th scope="col">{header}</th>)}</tr></thead>
+                    <tbody>{block.rows.map((row) => <tr>{row.map((cell) => <td>{cell}</td>)}</tr>)}</tbody>
+                  </table>
+                </div>
+              );
               if (block.type === 'code') return (
                 <div class="code-wrap">
                   <span class="mono code-lang">{block.language}</span>
@@ -232,6 +245,13 @@ const structuredData = {
   .note-body p + p, .note-body p + ul, .note-body ul + p, .note-body .callout + p { margin-top: var(--s-4); }
   .note-body ul:not(.chip-row) { display: grid; gap: var(--s-2); padding-left: 1.35em; margin-top: var(--s-4); }
   .note-body li::marker { color: var(--accent); }
+  .source-list a { text-underline-offset: 3px; }
+  .table-wrap { max-width: 100%; margin-block: var(--s-5); overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+  table { width: 100%; min-width: 480px; border-collapse: collapse; font-size: var(--step--1); line-height: 1.5; }
+  th, td { padding: var(--s-3) var(--s-4); text-align: left; vertical-align: top; }
+  th { font-family: var(--font-mono); font-weight: 500; color: var(--ink-soft); background: var(--paper-deep); }
+  tr + tr td { border-top: 1px solid var(--line-soft); }
+  th + th, td + td { border-left: 1px solid var(--line-soft); }
 
   .callout { margin-block: var(--s-5); padding: var(--s-4) 0 var(--s-4) var(--s-5); border-left: 3px solid var(--accent); }
   .callout-title { color: var(--accent); font-size: var(--step--1) !important; margin-bottom: var(--s-2); }
