@@ -9,6 +9,7 @@ export type NoteBlock =
   | { type: 'p'; text: string }
   | { type: 'list'; items: string[] }
   | { type: 'links'; items: { label: string; href: string }[] }
+  | { type: 'image'; src: string; alt: string; caption: string; width: number; height: number }
   | { type: 'table'; headers: string[]; rows: string[][] }
   | { type: 'code'; language: string; code: string }
   | { type: 'callout'; title: string; text: string };
@@ -80,7 +81,8 @@ export const notes: Note[] = [
         blocks: [
           { type: 'p', text: 'A dense 27B model has no comfortable place in 12 GB of VRAM at four or five bits per weight. Q4_K_M alone is about 17.8 GB, before the KV cache, CUDA buffers, or an MTP draft model. Q3 leaves little room for useful context.' },
           { type: 'p', text: 'I first downloaded an Unsloth UD-IQ2_XXS file of about 9.0 GB, then settled on Qwen3.8-27B-UD-IQ2_S.gguf with a Q4_0 MTP draft module. The target was roughly two bits per weight. It shared the card with the draft model and a quantized 32k KV cache, so the official scores were never an expectation for this configuration.' },
-          { type: 'p', text: 'At first, the model was fast enough to look convincing. It produced coherent text and long reasoning traces. An SVG dragon changed the picture: the output was poor, and tokens per second stopped looking like a useful measure of quality.' },
+          { type: 'p', text: 'At first, the model was fast enough to look convincing. It produced coherent text and long reasoning traces. I asked for an SVG dragon and got a flying dinosaur on a bicycle. It is a reasonable illustration for a roughly 2-bit model. The test also made clear that tokens per second were only one part of the picture.' },
+          { type: 'image', src: '/img/qwen38-dinosaur-bicycle.png', alt: 'Green flying dinosaur riding a red bicycle on a road beneath a blue sky', caption: 'One SVG test, rendered to PNG. Better than I first gave it credit for.', width: 800, height: 600 },
         ],
       },
       {

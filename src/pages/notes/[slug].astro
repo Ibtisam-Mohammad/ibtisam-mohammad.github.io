@@ -148,6 +148,12 @@ const structuredData = {
                   {block.items.map((item) => <li><a href={item.href}>{item.label} &#8599;</a></li>)}
                 </ul>
               );
+              if (block.type === 'image') return (
+                <figure class="note-image">
+                  <img src={block.src} alt={block.alt} width={block.width} height={block.height} loading="lazy" decoding="async" />
+                  <figcaption class="mono muted">{block.caption}</figcaption>
+                </figure>
+              );
               if (block.type === 'table') return (
                 <div class="table-wrap" tabindex="0">
                   <table>
@@ -246,6 +252,9 @@ const structuredData = {
   .note-body ul:not(.chip-row) { display: grid; gap: var(--s-2); padding-left: 1.35em; margin-top: var(--s-4); }
   .note-body li::marker { color: var(--accent); }
   .source-list a { text-underline-offset: 3px; }
+  .note-image { margin-block: var(--s-5); }
+  .note-image img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper-deep); }
+  .note-image figcaption { margin-top: var(--s-2); font-size: var(--step--1); }
   .table-wrap { max-width: 100%; margin-block: var(--s-5); overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
   table { width: 100%; min-width: 480px; border-collapse: collapse; font-size: var(--step--1); line-height: 1.5; }
   th, td { padding: var(--s-3) var(--s-4); text-align: left; vertical-align: top; }
