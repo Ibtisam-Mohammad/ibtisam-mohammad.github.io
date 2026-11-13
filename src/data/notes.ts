@@ -36,6 +36,159 @@ export interface Note {
 
 export const notes: Note[] = [
   {
+    slug: 'redmi-note-3-android-11-with-claude-code',
+    published: '2026-11-13',
+    title: 'Android 11 on a 2016 Redmi Note 3, done through Claude Code',
+    kind: 'field note',
+    dek: 'A Redmi Note 3 that had been on Android 6 since 2018 now runs Havoc OS 4.26. The work went through Claude Code: parallel research agents, 24 partition backups, a bootloader unlock, and a full storage rebuild in EDL mode.',
+    accent: 'leaf',
+    tags: [{ t: 'agents', a: 'violet' }, { t: 'debugging', a: 'cobalt' }],
+    sourceUrl: 'https://github.com/Dheeraj3031A/device_xiaomi_kenzo/releases',
+    sourceLabel: 'Havoc OS builds for kenzo',
+    sections: [
+      {
+        heading: 'The phone and the goal',
+        blocks: [
+          { type: 'p', text: 'The phone is a Xiaomi Redmi Note 3, the Snapdragon 650 model that the ROM community calls kenzo. When I plugged it into my PC in October 2026 it was still on MIUI 10.2.1.0, which is Android 6.0.1 with a security patch dated July 2018. Its YouTube app was frozen at a 2022 version and Chrome at version 106, because most current apps no longer install or update on Android 6.' },
+          { type: 'p', text: 'I did the whole job through Claude Code, an AI coding agent that runs commands on my PC. It read the phone over adb, ran the research in parallel sub-agents, wrote and ran the flashing scripts, and reported what it found. I made the decisions, held the phone, and questioned the reports. This note covers what we did between 23 and 26 October, including the step that went wrong.' },
+          { type: 'callout', title: 'Result in one line', text: 'The phone boots Havoc OS 4.26 (Android 11, February 2025 security patch) in about 90 seconds. Along the way an erase command emptied the whole storage, and the phone was rebuilt from 24 partition backups taken before the first write.' },
+          { type: 'table', headers: ['Item', 'As found'], rows: [
+            ['Model', 'Xiaomi Redmi Note 3 (kenzo)'],
+            ['Chip', 'Snapdragon 650 (MSM8956), 64-bit'],
+            ['Memory and storage', '3 GB RAM, 32 GB eMMC'],
+            ['Software', 'MIUI V10.2.1.0.MHOMIXM, Android 6.0.1'],
+            ['Security patch', '2018-07-01'],
+            ['Kernel', 'Linux 3.10.84'],
+            ['PC side', 'Windows 11, adb and fastboot from the Android SDK, Python 3.13'],
+          ] },
+        ],
+      },
+      {
+        heading: 'Why Android 11 is the ceiling',
+        blocks: [
+          { type: 'p', text: 'Claude’s first suggestion was to stay on Android 6 and install the last app versions that still support it, such as NewPipe for YouTube and Firefox 143. I wanted a current system, so the question became how new a system this phone can run.' },
+          { type: 'p', text: 'The answer is Android 11, and the limit is software. The camera, modem, graphics, Wi-Fi and fingerprint drivers are closed binaries that Xiaomi and Qualcomm built for Android 6, and every ROM for this phone copies them out of MIUI and adapts around them. The kernel is Linux 3.10.84, from 2015. The phone also predates Project Treble, so no generic Android image runs on it and each version has to be built for it by hand.' },
+          { type: 'list', items: [
+            'LineageOS 19.1 (Android 12) exists, with a broken fingerprint sensor, random reboots and 5 GHz Wi-Fi drops.',
+            'A test build of Android 16 runs on a mainline kernel, without the camera and with two of the six CPU cores offline.',
+            'The one developer still building for this phone wrote in August 2026 that “stable is A11 for now”.',
+          ] },
+        ],
+      },
+      {
+        heading: 'Two rounds of parallel research',
+        blocks: [
+          { type: 'p', text: 'The first round ran as two sub-agents at the same time, one choosing the ROM and one looking for a way to unlock the bootloader without Xiaomi’s Mi Unlock tool. It came back with Havoc OS 4.26, built in March 2025 by the volunteer who still maintains this phone.' },
+          { type: 'p', text: 'Before anything was written to the phone I asked for a second round, to see what the first had missed. Claude ran three sub-agents in parallel: one read recent user reports for each candidate ROM, one checked how long everyday apps will keep supporting Android 11, and one covered Indian mobile networks and the battery. The pick held and the plan around it changed.' },
+          { type: 'table', headers: ['Candidate', 'Verdict'], rows: [
+            ['Havoc OS 4.26 (Android 11)', 'Chosen. About 19 months of user reports, and calls confirmed on Jio and Airtel.'],
+            ['Havoc OS 4.27 (Android 11)', 'Rejected. The phone switches itself back on after power-off and never enters deep sleep.'],
+            ['LineageOS 18.1 (Android 11)', 'Fallback. The January 2024 build is older than the fix that got Jio calls working.'],
+            ['LineageOS 19.1 (Android 12)', 'Rejected. Broken fingerprint sensor and random reboots.'],
+            ['crDroid', 'Rejected. Calls fail on Jio and Vodafone.'],
+          ] },
+          { type: 'p', text: 'The second round also corrected the first. Round one had reported that Havoc’s built-in fix makes the Play Store show the device as certified. Users in January and June 2026 were still uncertified, so that claim came out of the plan. Round two added Google’s dialer to the install, because the stock dialer had failed to show the in-call screen for one user, and it flagged that the battery, now more than eight years old, should be replaced.' },
+        ],
+      },
+      {
+        heading: 'Backups before the first write',
+        blocks: [
+          { type: 'p', text: 'Two backups were taken before the phone was modified. The first was the user storage over adb: 389 files, 488 MB. The second was 24 partitions read out in Qualcomm’s emergency download (EDL) mode, a flashing mode that lives in the chip’s boot ROM and cannot be erased.' },
+          { type: 'p', text: 'Most partitions on a phone can be downloaded again from the maker. A few cannot. modemst1, modemst2 and fsg hold the IMEI and the radio’s settings, and persist holds sensor and Wi-Fi calibration. They are unique to each handset, and a phone that loses them loses its identity on the network.' },
+          { type: 'callout', title: 'Why this mattered', text: 'These backups were taken before the first write. Within the hour they were the only copy of the phone’s identity.' },
+        ],
+      },
+      {
+        heading: 'Unlocking the bootloader',
+        blocks: [
+          { type: 'p', text: 'The stock bootloader only unlocks with a token signed by Xiaomi, which is what the Mi Unlock tool obtains. The long-standing community route for this model uses an older official Xiaomi bootloader that accepts the unlock command without a token. Claude checked that file’s signature against the bootloader already on the phone and found both signed with the same Xiaomi key, so the phone would accept it.' },
+          { type: 'p', text: 'The first attempt was refused with “oem unlock is not allowed”. The bootloader also reads the OEM unlocking switch from Developer options, and that switch was off. By then MIUI was restarting about two seconds after reaching the home screen, so the switch could not be turned on from Settings, and Claude set the flag directly in the partition where it is stored.' },
+          { type: 'p', text: 'That restart loop began on the first evening, after the phone had been switched into EDL mode and before anything had been written to it. We never established the cause. The battery is the leading guess, since it had sat at 6% for hours on the PC’s USB port.' },
+        ],
+      },
+      {
+        heading: 'An erase that covered the whole disk',
+        blocks: [
+          { type: 'p', text: 'To stop the loop, the plan was to clear the 64 MB boot partition so the phone would fall through to fastboot by itself. Claude used the flashing tool’s erase command for that. On this phone the erase covered the whole eMMC instead of the one partition.' },
+          { type: 'p', text: 'Claude reported it in its next message, with the likely cause, and then confirmed it by reading the storage back. The partition table, the boot chain, the bootloader and the boot image were all zeros. The screen stayed black and a red light blinked, which is the chip falling back to EDL mode because it finds nothing to boot.' },
+          { type: 'callout', title: 'The rule we took from it', text: 'On this phone, never use the erase command. To blank a partition, write a file of zeros to it.' },
+        ],
+      },
+      {
+        heading: 'Rebuilding the storage',
+        blocks: [
+          { type: 'p', text: 'EDL mode still answered, so the whole disk could be written again from the PC. The rebuild drew on three sources.' },
+          { type: 'table', headers: ['Source', 'What it restored'], rows: [
+            ['Xiaomi’s official MIUI V10.2.1.0 package, 1.45 GB, checksum verified', 'Partition table, boot chain (sbl1, rpm, tz, hyp), modem firmware, boot logo and security files'],
+            ['The phone’s own backups', 'modemst1, modemst2, fsg, persist, dsp, devinfo, devcfg, mcfg, keystore'],
+            ['Unlock preparation', 'The unlockable bootloader, the OEM unlock flag, and TWRP as recovery'],
+          ] },
+          { type: 'p', text: 'The partition table was rebuilt to the original 61,071,360 sectors, with userdata ending at sector 61,071,326, and every offset was compared with the layout read from the phone earlier. The stock firmware matched the backups exactly except for dsp, so that one came from the backup. System, boot and userdata were left empty on purpose: with no boot image the phone stops in fastboot, which is where we needed it. The rebuild used plain writes only, and the critical partitions were read back and compared afterwards.' },
+          { type: 'p', text: 'About 45 minutes passed between the first report of the wipe and Android 11 running on the phone, and roughly ten of those were the download.' },
+        ],
+      },
+      {
+        heading: 'Installing Havoc',
+        blocks: [
+          { type: 'p', text: 'After the rebuild the phone came up in fastboot by itself and reported get_unlock_ability: 1. The unlock went through and the phone restarted into TWRP 3.7.0. From there Claude formatted data and cache as ext4, pushed four zips over adb, compared their checksums on the phone with the copies on the PC, and installed them in order: Havoc OS 4.26, NikGapps core, Google’s dialer and the Pixel setup wizard.' },
+          { type: 'table', headers: ['File', 'Size', 'Check before use'], rows: [
+            ['TWRP 3.7.0', '20.7 MB', 'SHA-256 matches the official checksum'],
+            ['Havoc OS 4.26', '732.8 MB', 'Size matches the release listing, and the zip tests clean'],
+            ['NikGapps core for Android 11', '80.5 MB', 'MD5 matches the listed hash'],
+            ['Google dialer add-on', '26.8 MB', 'Checksum verified'],
+            ['Pixel setup wizard add-on', '15.6 MB', 'Checksum verified'],
+          ] },
+        ],
+      },
+      {
+        heading: 'State at the end',
+        blocks: [
+          { type: 'code', language: 'text', code: 'Havoc OS 4.26, Android 11, security patch 2025-02-05\nBoot:       about 90 s, no restarts in 5 minutes of watching\nBootloader: unlocked          SELinux: enforcing\nModem:      firmware loaded (baseband 976_GEN_PACK-1.103654.1.105572.1)\nSensors:    present           Battery: 90%, 4.13 V, 28.7 C, health good\nGoogle:     Play Store, Play services, dialer, setup wizard installed\nStorage:    24 GB free' },
+          { type: 'p', text: 'These values were read over adb straight after the install. That check did not cover calls, mobile data, the IMEI readout, the camera or the fingerprint sensor.' },
+          { type: 'p', text: 'The build has known limits, taken from user reports and from what we did to the phone.' },
+          { type: 'list', items: [
+            '4G calling can fail to register after a restart, on every Android 11 ROM for this phone. On a 4G-only network that means no calls until the next restart.',
+            'The Play Store shows the device as not certified.',
+            'Security patches stop at February 2025, and the 2018 firmware underneath gets none, so this is not a phone for banking apps.',
+            'Flashing any MIUI firmware would bring back the token-checking bootloader.',
+          ] },
+        ],
+      },
+      {
+        heading: 'What the agent got wrong',
+        blocks: [
+          { type: 'p', text: 'Six things Claude said or did over the four days turned out to be wrong. Each was caught, and the table records by whom.' },
+          { type: 'table', headers: ['Claim or action', 'What was true', 'Caught by'], rows: [
+            ['“adb isn’t installed on this PC”', 'It was installed and missing from PATH', 'Me. I said I thought it was installed, and Claude then ran it by its full path'],
+            ['The chip named as MSM8976', 'MSM8956', 'A research sub-agent'],
+            ['Havoc makes the Play Store show “certified”', 'No longer true in 2026', 'The second research round'],
+            ['Erase one 64 MB partition', 'The whole eMMC was erased', 'Claude, on its next read of the disk'],
+            ['“The ROM is downloading”', 'Two attempts had stalled at zero bytes', 'Me. I asked whether it was really running'],
+            ['A PowerShell loop using both $p and $P', 'PowerShell variables are case-insensitive, so the folder path was overwritten', 'Claude, before anything was written to the phone'],
+          ] },
+        ],
+      },
+      {
+        heading: 'Where a person was needed',
+        blocks: [
+          { type: 'p', text: 'Some of the work needed hands. Fastboot on this phone is entered by holding two buttons, the battery only charged properly from a wall charger, and Windows needed two drivers installed through dialogs, WinUSB for EDL mode and Google’s USB driver for fastboot.' },
+          { type: 'p', text: 'The less obvious gap was persistence. An agent starts a long-running job, reports it as running, and moves on to the next thing. It does not stay with the job the way a person watching a progress bar does. The 1.45 GB download was reported as in progress in three consecutive messages while nothing had been saved. When I asked, Claude checked, found zero bytes, restarted it with curl in eight parts, and this time showed a measurement: 102 MB of 1,383 MB at 2.77 MB/s.' },
+        ],
+      },
+      {
+        heading: 'Sources',
+        blocks: [
+          { type: 'links', items: [
+            { label: 'Havoc OS builds for kenzo (developer’s releases)', href: 'https://github.com/Dheeraj3031A/device_xiaomi_kenzo/releases' },
+            { label: 'TWRP for kenzo', href: 'https://dl.twrp.me/kenzo/' },
+            { label: 'NikGapps releases for Android 11', href: 'https://sourceforge.net/projects/nikgapps/files/Releases/Android-11/' },
+            { label: 'bkerler/edl, the open-source EDL tool', href: 'https://github.com/bkerler/edl' },
+          ] },
+        ],
+      },
+    ],
+  },
+  {
     slug: 'qwen38-27b-on-12gb-rtx-3060',
     published: '2026-08-25',
     title: 'Qwen3.8-27B on an RTX 3060 with 12 GB of VRAM',
